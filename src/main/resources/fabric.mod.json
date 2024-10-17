@@ -1,0 +1,47 @@
+{
+	"schemaVersion": 1,
+	"id": "mcmidi",
+	"version": "${version}",
+	"name": "MCMidi",
+	"description": "This is a mod that allows you to play MIDI files in Minecraft.",
+	"authors": [
+		"Hashibutogarasu"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/mcmidi/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"karasu_lab.mcmidi.MCMidi"
+		],
+		"client": [
+			"karasu_lab.mcmidi.MCMidiClient"
+		]
+	},
+	"mixins": [
+		"mcmidi.mixins.json",
+		{
+			"config": "mcmidi.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"accessWidener": "mcmidi.accesswidener",
+	"depends": {
+		"fabricloader": ">=0.16.7",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	},
+	"custom": {
+		"loom:injected_interfaces": {
+
+		}
+	}
+}
