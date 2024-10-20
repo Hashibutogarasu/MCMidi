@@ -33,7 +33,7 @@ public class ModLangProviders {
         public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder translationBuilder) {
             translationBuilder.add("options.midi", "MIDI Settings");
             translationBuilder.add("text.autoconfig.mcmidi.title", "MCMidi");
-            translationBuilder.add("text.autoconfig.mcmidi.options.midiVolume", "MIDI Volume");
+            translationBuilder.add("text.autoconfig.mcmidi.option.midiVolume", "MIDI Volume");
         }
     }
 }
