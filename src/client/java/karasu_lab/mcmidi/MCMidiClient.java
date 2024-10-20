@@ -1,7 +1,7 @@
 package karasu_lab.mcmidi;
 
 import karasu_lab.mcmidi.api.networking.ModClientNetworking;
-import karasu_lab.mcmidi.screen.MidiOptionsScreen;
+import karasu_lab.mcmidi.screen.MidiControlCenter;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -24,14 +24,13 @@ public class MCMidiClient implements ClientModInitializer {
         "category.mcmidi.keybinds" // The translation key of the keybinding's category.
 	));
 
-
 	@Override
 	public void onInitializeClient() {
 		ModClientNetworking.registerS2CPackets();
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (keyBinding.wasPressed()) {
-				client.setScreen(new MidiOptionsScreen());
+				client.setScreen(new MidiControlCenter());
 			}
 		});
 	}
