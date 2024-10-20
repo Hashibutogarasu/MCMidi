@@ -4,6 +4,9 @@ import karasu_lab.mcmidi.api.MidiManager;
 import karasu_lab.mcmidi.api.SoundFontManager;
 import karasu_lab.mcmidi.api.command.MidiCommand;
 import karasu_lab.mcmidi.api.networking.ModNetworking;
+import karasu_lab.mcmidi.config.ModConfig;
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -24,6 +27,7 @@ public class MCMidi implements ModInitializer {
 		});
 
 		ModNetworking.registerC2SPackets();
+		AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
     }
 
 	public static Identifier id(String path) {

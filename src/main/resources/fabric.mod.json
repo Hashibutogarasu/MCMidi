@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"karasu_lab.mcmidi.MCMidiClient"
+		],
+		"modmenu": [
+			"karasu_lab.mcmidi.ModMenuIntegration"
 		]
 	},
 	"mixins": [
