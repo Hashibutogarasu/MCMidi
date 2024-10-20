@@ -21,6 +21,10 @@ repositories {
 	}
 }
 
+fabricApi {
+	configureDataGeneration()
+}
+
 loom {
 	splitEnvironmentSourceSets()
 	accessWidenerPath = file("src/main/resources/mcmidi.accesswidener")

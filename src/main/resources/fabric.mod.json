@@ -11,7 +11,7 @@
 		"homepage": "https://fabricmc.net/",
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/mcmidi/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"karasu_lab.mcmidi.MCMidiClient"
+		],
+		"fabric-datagen": [
+			"karasu_lab.mcmidi.MCMidiDataGen"
 		],
 		"modmenu": [
 			"karasu_lab.mcmidi.ModMenuIntegration"
