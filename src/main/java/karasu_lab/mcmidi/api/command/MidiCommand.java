@@ -3,6 +3,7 @@ package karasu_lab.mcmidi.api.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import karasu_lab.mcmidi.MCMidi;
 import karasu_lab.mcmidi.api.networking.SequencePayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -11,7 +12,6 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.EntityDataObject;
 import net.minecraft.command.StorageDataObject;
 import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.nbt.NbtByteArray;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.DataCommand;
@@ -43,9 +43,6 @@ public class MidiCommand {
                                 .then(CommandManager.argument("path", StringArgumentType.string())
                                         .executes(MidiCommand::playMidiCommand)))
                 ))
-                .then((CommandManager.literal("pause").then(CommandManager.argument("targets", EntityArgumentType.entities())
-                        .executes(MidiCommand::pauseMidiCommand)))
-                )
                 .then((CommandManager.literal("stop").then(CommandManager.argument("targets", EntityArgumentType.entities())
                         .executes(MidiCommand::stopMidiCommand))
                 )
@@ -68,6 +65,15 @@ public class MidiCommand {
     }
 
     private static int playMidiCommand(CommandContext<ServerCommandSource> context){
+        executeLoadCommand(context);
+        List<ServerPlayerEntity> targets = new ArrayList<>();
+        try {
+            Collection<ServerPlayerEntity> target =  EntityArgumentType.getPlayers(context, "targets");
+            targets.addAll(target);
+        } catch (CommandSyntaxException ignored) {
+
+        }
+
         Identifier id = MCMidi.id("midi/" + StringArgumentType.getString(context, "path"));
         MCMidi.midiManager.loadMidiFromFile(id).ifPresent(file -> {
             List<Byte> byteList = new ArrayList<>();
@@ -83,17 +89,34 @@ public class MidiCommand {
             NbtCompound nbt = new NbtCompound();
             nbt.putByteArray("data", byteList);
             nbt.putString("state", SequencePayload.MidiPlayerState.PLAYING.getName());
+            nbt.putString("path", id.toString());
 
-            ServerPlayNetworking.send((ServerPlayerEntity) context.getSource().getEntity(), new SequencePayload(nbt, new File(MCMidi.midiManager.getMidiPath(id, ".midi").toUri())));
+            for (ServerPlayerEntity target : targets) {
+                ServerPlayNetworking.send(target, new SequencePayload(nbt));
+            }
+
+            context.getSource().sendMessage(Text.literal("Playing " + id));
         });
-        return 0;
-    }
 
-    private static int pauseMidiCommand(CommandContext<ServerCommandSource> context){
         return 0;
     }
 
     private static int stopMidiCommand(CommandContext<ServerCommandSource> context){
+        List<ServerPlayerEntity> targets = new ArrayList<>();
+        try {
+            Collection<ServerPlayerEntity> target =  EntityArgumentType.getPlayers(context, "targets");
+            targets.addAll(target);
+        } catch (CommandSyntaxException ignored) {
+
+        }
+
+        NbtCompound nbt = new NbtCompound();
+        nbt.putString("state", SequencePayload.MidiPlayerState.STOPPING.getName());
+
+        for (ServerPlayerEntity target : targets) {
+            ServerPlayNetworking.send(target, new SequencePayload(nbt));
+        }
+
         return 0;
     }
 

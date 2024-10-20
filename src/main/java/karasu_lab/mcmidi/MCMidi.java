@@ -1,6 +1,7 @@
 package karasu_lab.mcmidi;
 
 import karasu_lab.mcmidi.api.MidiManager;
+import karasu_lab.mcmidi.api.SoundFontManager;
 import karasu_lab.mcmidi.api.command.MidiCommand;
 import karasu_lab.mcmidi.api.networking.ModNetworking;
 import net.fabricmc.api.ModInitializer;
@@ -14,6 +15,7 @@ public class MCMidi implements ModInitializer {
 	public static final String MOD_ID = "mcmidi";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public static MidiManager midiManager;
+	public static SoundFontManager soundFontManager;
 
 	@Override
 	public void onInitialize() {

@@ -3,6 +3,7 @@ package karasu_lab.mcmidi.mixin;
 import com.mojang.datafixers.DataFixer;
 import karasu_lab.mcmidi.MCMidi;
 import karasu_lab.mcmidi.api.MidiManager;
+import karasu_lab.mcmidi.api.SoundFontManager;
 import net.minecraft.block.Block;
 import net.minecraft.registry.CombinedDynamicRegistries;
 import net.minecraft.registry.RegistryEntryLookup;
@@ -33,5 +34,7 @@ public abstract class MinecraftServerMixin{
 	private void init(Thread serverThread, LevelStorage.Session session, ResourcePackManager resourcePackManager, SaveLoader saveLoader, Proxy proxy, DataFixer dataFixer, ApiServices apiServices, WorldGenerationProgressListenerFactory worldGenerationProgressListenerFactory, CallbackInfo ci) {
 		RegistryEntryLookup<Block> registryEntryLookup = this.combinedDynamicRegistries.getCombinedRegistryManager().get(RegistryKeys.BLOCK).getReadOnlyWrapper().withFeatureFilter(this.saveProperties.getEnabledFeatures());
 		MCMidi.midiManager = new MidiManager(saveLoader.resourceManager(), session, dataFixer, registryEntryLookup);
+		MCMidi.soundFontManager = new SoundFontManager(saveLoader.resourceManager(), session, dataFixer, registryEntryLookup);
+
 	}
 }

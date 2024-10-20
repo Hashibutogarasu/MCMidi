@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
 import java.io.*;
 import java.nio.file.*;
@@ -28,39 +27,39 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-public class MidiManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MidiManager.class);
-    private static final String MIDI_DIRECTORY = "midi";
-    private static final String MIDI_EXTENSION = ".midi";
+public class SoundFontManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SoundFontManager.class);
+    private static final String SOUNDFONT_DIRECTORY = "soundfont";
+    private static final String SOUNDFONT_EXTENTION = ".sf2";
     private final Map<Identifier, Optional<Sequence>> midis = Maps.newConcurrentMap();
     private final DataFixer dataFixer;
     private ResourceManager resourceManager;
     private final Path generatedPath;
     private final List<Provider> providers;
     private final RegistryEntryLookup<Block> blockLookup;
-    private static final ResourceFinder MIDI_NBT_RESOURCE_FINDER = new ResourceFinder(MIDI_DIRECTORY, MIDI_EXTENSION);
+    private static final ResourceFinder SOUNDFONT_NBT_RESOURCE_FINDER = new ResourceFinder(SOUNDFONT_DIRECTORY, SOUNDFONT_EXTENTION);
 
-    public MidiManager(ResourceManager resourceManager, LevelStorage.Session session, DataFixer dataFixer, RegistryEntryLookup<Block> blockLookup){
+    public SoundFontManager(ResourceManager resourceManager, LevelStorage.Session session, DataFixer dataFixer, RegistryEntryLookup<Block> blockLookup){
         this.resourceManager = resourceManager;
         this.dataFixer = dataFixer;
         this.generatedPath = session.getDirectory(WorldSavePath.GENERATED).normalize();
         this.blockLookup = blockLookup;
         ImmutableList.Builder<Provider> builder = ImmutableList.builder();
-        builder.add(new Provider(this::loadMidiFromFile, this::streamMidisFromFile));
+        builder.add(new Provider(this::loadSoundFontFromFile, this::streamSoundFontsFromFile));
         if (SharedConstants.isDevelopment) {
-            builder.add(new Provider(this::loadMidiFromGameTestFile, this::streamMidisFromGameTestFile));
+            builder.add(new Provider(this::loadSoundFontFromGameTestFile, this::streamSoundFontsFromGameTestFile));
         }
 
-        builder.add(new Provider(this::loadMidiFromResource, this::streamMidisFromResource));
+        builder.add(new Provider(this::loadSoundFontFromResource, this::streamSoundFontsFromResource));
         this.providers = builder.build();
     }
 
-    public Stream<Identifier> streamMidisFromResource() {
-        Stream<Identifier> finder = MIDI_NBT_RESOURCE_FINDER.findResources(this.resourceManager).keySet().stream();
-        return finder.map(MIDI_NBT_RESOURCE_FINDER::toResourceId);
+    public Stream<Identifier> streamSoundFontsFromResource() {
+        Stream<Identifier> finder = SOUNDFONT_NBT_RESOURCE_FINDER.findResources(this.resourceManager).keySet().stream();
+        return finder.map(SOUNDFONT_NBT_RESOURCE_FINDER::toResourceId);
     }
 
-    public Stream<Identifier> streamMidisFromGameTestFile() {
+    public Stream<Identifier> streamSoundFontsFromGameTestFile() {
         if (!Files.isDirectory(this.generatedPath, new LinkOption[0])) {
             return Stream.empty();
         } else {
@@ -76,9 +75,9 @@ public class MidiManager {
                     while(pathIterator.hasNext()) {
                         Path path = pathIterator.next();
                         String string = path.getFileName().toString();
-                        Path path2 = path.resolve(MIDI_DIRECTORY);
+                        Path path2 = path.resolve(SOUNDFONT_DIRECTORY);
                         Objects.requireNonNull(list);
-                        this.streamMidis(path2, string, MIDI_EXTENSION, list::add);
+                        this.streamSoundFonts(path2, string, SOUNDFONT_EXTENTION, list::add);
                     }
                 } catch (Throwable throwable1) {
                     if (directoryStream != null) {
@@ -103,16 +102,16 @@ public class MidiManager {
         }
     }
 
-    public Optional<File> loadMidiFromResource(Identifier id) {
-        Identifier identifier = MIDI_NBT_RESOURCE_FINDER.toResourcePath(id);
-        return this.loadMidi(() -> {
+    public Optional<File> loadSoundFontFromResource(Identifier id) {
+        Identifier identifier = SOUNDFONT_NBT_RESOURCE_FINDER.toResourcePath(id);
+        return this.loadSoundFont(() -> {
             return this.resourceManager.open(identifier);
         }, (throwable) -> {
             LOGGER.error("Couldn't load midi {}", id, throwable);
         });
     }
 
-    public Stream<Identifier> streamMidisFromFile() {
+    public Stream<Identifier> streamSoundFontsFromFile() {
         if (!Files.isDirectory(this.generatedPath, new LinkOption[0])) {
             return Stream.empty();
         } else {
@@ -128,9 +127,9 @@ public class MidiManager {
                     while(var3.hasNext()) {
                         Path path = var3.next();
                         String string = path.getFileName().toString();
-                        Path path2 = path.resolve(MIDI_DIRECTORY);
+                        Path path2 = path.resolve(SOUNDFONT_DIRECTORY);
                         Objects.requireNonNull(list);
-                        this.streamMidis(path2, string, MIDI_EXTENSION, list::add);
+                        this.streamSoundFonts(path2, string, SOUNDFONT_EXTENTION, list::add);
                     }
                 } catch (Throwable throwable1) {
                     if (directoryStream != null) {
@@ -155,7 +154,7 @@ public class MidiManager {
         }
     }
 
-    public void streamMidis(Path directory, String namespace, String fileExtension, Consumer<Identifier> idConsumer) {
+    public void streamSoundFonts(Path directory, String namespace, String fileExtension, Consumer<Identifier> idConsumer) {
         int i = fileExtension.length();
         Function<String, String> function = (filename) -> {
             return filename.substring(0, filename.length() - i);
@@ -199,11 +198,11 @@ public class MidiManager {
         return root.relativize(path).toString().replace(File.separator, "/");
     }
 
-    public Optional<File> loadMidiFromGameTestFile(Identifier id) {
-        return this.loadMidiFromSnbt(id, Paths.get(MidiTestUtil.getTestMidisDirectoryName));
+    public Optional<File> loadSoundFontFromGameTestFile(Identifier id) {
+        return this.loadSoundFontFromSnbt(id, Paths.get(MidiTestUtil.getTestMidisDirectoryName));
     }
 
-    public Optional<File> loadMidiFromSnbt(Identifier id, Path path) {
+    public Optional<File> loadSoundFontFromSnbt(Identifier id, Path path) {
         if (!Files.isDirectory(path, new LinkOption[0])) {
             return Optional.empty();
         } else {
@@ -215,7 +214,7 @@ public class MidiManager {
                 Optional<File> sequenceOptional;
                 try {
                     String string = IOUtils.toString(bufferedReader);
-                    sequenceOptional = Optional.of(this.createMidi(NbtHelper.fromNbtProviderString(string)));
+                    sequenceOptional = Optional.of(this.createSoundFont(NbtHelper.fromNbtProviderString(string)));
                 } catch (Throwable var8) {
                     if (bufferedReader != null) {
                         try {
@@ -242,18 +241,18 @@ public class MidiManager {
         }
     }
 
-    public File createMidi(NbtCompound nbtCompound) throws InvalidMidiDataException, IOException {
-        File tempFile = File.createTempFile(MIDI_DIRECTORY, MIDI_EXTENSION);
-        Files.write(tempFile.toPath(), nbtCompound.getByteArray(MIDI_DIRECTORY));
+    public File createSoundFont(NbtCompound nbtCompound) throws InvalidMidiDataException, IOException {
+        File tempFile = File.createTempFile(SOUNDFONT_DIRECTORY, SOUNDFONT_EXTENTION);
+        Files.write(tempFile.toPath(), nbtCompound.getByteArray(SOUNDFONT_DIRECTORY));
         return tempFile;
     }
 
-    public Optional<File> loadMidiFromFile(Identifier id) {
+    public Optional<File> loadSoundFontFromFile(Identifier id) {
         if (!Files.isDirectory(this.generatedPath, new LinkOption[0])) {
             return Optional.empty();
         } else {
-            Path path = this.getMidiPath(id, MIDI_EXTENSION);
-            return this.loadMidi(() -> {
+            Path path = this.getSoundFontPath(id, SOUNDFONT_EXTENTION);
+            return this.loadSoundFont(() -> {
                 return new FileInputStream(path.toFile());
             }, (throwable) -> {
                 LOGGER.error("Couldn't load midi from {}", path, throwable);
@@ -261,7 +260,7 @@ public class MidiManager {
         }
     }
 
-    public Optional<File> loadMidi(MidiFileOpener opener, Consumer<Throwable> exceptionConsumer) {
+    public Optional<File> loadSoundFont(SoundFontFileOpener opener, Consumer<Throwable> exceptionConsumer) {
         try {
             InputStream inputStream = opener.open();
 
@@ -270,7 +269,7 @@ public class MidiManager {
                 InputStream inputStream2 = new FixedBufferInputStream(inputStream);
 
                 try {
-                    sequenceOptional = Optional.of(this.readMidi(inputStream2));
+                    sequenceOptional = Optional.of(this.readSoundFont(inputStream2));
                 } catch (Throwable throwable1) {
                     try {
                         inputStream2.close();
@@ -307,13 +306,13 @@ public class MidiManager {
         }
     }
 
-    public File readMidi(InputStream midiIInputStream) throws IOException, InvalidMidiDataException {
-        File tempFile = File.createTempFile(MIDI_DIRECTORY, MIDI_EXTENSION);
+    public File readSoundFont(InputStream midiIInputStream) throws IOException, InvalidMidiDataException {
+        File tempFile = File.createTempFile(SOUNDFONT_DIRECTORY, SOUNDFONT_EXTENTION);
         Files.copy(midiIInputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         return tempFile;
     }
 
-    public Path getMidiPath(Identifier id, String extension) {
+    public Path getSoundFontPath(Identifier id, String extension) {
         if (id.getPath().contains("//")) {
             throw new InvalidIdentifierException("Invalid resource path: " + String.valueOf(id));
         } else {
@@ -332,7 +331,7 @@ public class MidiManager {
     }
 
     @FunctionalInterface
-    public interface MidiFileOpener {
+    public interface SoundFontFileOpener {
         InputStream open() throws IOException;
     }
 
