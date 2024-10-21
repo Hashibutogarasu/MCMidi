@@ -46,7 +46,9 @@ public class MidiS2CPacket {
         }
 
         try {
-            midi.saveToLocal(bytes, path);
+            if (midi != null) {
+                midi.saveToLocal(bytes, path);
+            }
             midi = new ExtendedMidi(new File(path));
         } catch (Exception e) {
             MCMidi.LOGGER.error("Failed to load MIDI file: {}", nbt.getString("path"));
@@ -73,6 +75,10 @@ public class MidiS2CPacket {
 
     public static String getPlayingPath() {
         return playingPath;
+    }
+
+    public static void setPlayingPath(String path) {
+        playingPath = path;
     }
 
 

@@ -128,6 +128,7 @@ public class MidiChooseScreen extends GameOptionsScreen {
                 }
                 MidiS2CPacket.setMidi(new ExtendedMidi(file));
                 var extendedMidi = MidiS2CPacket.getMidi();
+                MidiS2CPacket.setPlayingPath(selected.path);
 
                 if (extendedMidi != null) {
                     extendedMidi.play();
