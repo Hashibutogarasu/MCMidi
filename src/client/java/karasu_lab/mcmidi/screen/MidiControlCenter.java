@@ -45,7 +45,6 @@ public class MidiControlCenter extends Screen {
         this.playingPath = MidiS2CPacket.getPlayingPath();
         if(message instanceof ShortMessage shortMessage){
             midiNoteMap.put(shortMessage.getChannel(), new MidiNote(shortMessage));
-
             midiNoteMap.entrySet().stream().sorted(Map.Entry.comparingByKey());
         }
     }

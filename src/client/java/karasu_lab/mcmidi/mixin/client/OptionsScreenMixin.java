@@ -1,11 +1,8 @@
 package karasu_lab.mcmidi.mixin.client;
 
-import karasu_lab.mcmidi.MCMidi;
 import karasu_lab.mcmidi.screen.MidiControlCenter;
-import karasu_lab.mcmidi.screen.SoundFontManagerScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.option.GameOptionsScreen;
 import net.minecraft.client.gui.screen.option.LanguageOptionsScreen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
