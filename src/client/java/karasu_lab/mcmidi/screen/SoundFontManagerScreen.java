@@ -39,6 +39,10 @@ public class SoundFontManagerScreen extends GameOptionsScreen {
     private final ModConfig config;
     private final FileAlterationMonitor monitor;
 
+    public SoundFontManagerScreen(Screen parent) {
+        this(parent, MinecraftClient.getInstance().options);
+    }
+
     public SoundFontManagerScreen(Screen parent, GameOptions gameOptions) {
         super(parent, gameOptions, Text.translatable("mcmidi.options.title"));
         this.layout.setFooterHeight(53);

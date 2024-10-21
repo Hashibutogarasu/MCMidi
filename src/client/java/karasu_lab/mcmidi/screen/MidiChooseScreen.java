@@ -251,6 +251,6 @@ public class MidiChooseScreen extends GameOptionsScreen {
 
     @Override
     public boolean shouldPause() {
-        return false;
+        return true;
     }
 }

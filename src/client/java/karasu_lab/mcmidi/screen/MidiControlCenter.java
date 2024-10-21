@@ -83,7 +83,13 @@ public class MidiControlCenter extends Screen {
             if (this.client != null) {
                 this.client.setScreen(new MidiChooseScreen(this));
             }
-        }).dimensions((this.width / 2) - 100, this.height - 25, 200, 20).build());
+        }).dimensions((this.width / 2) + 5, this.height - 25, 200, 20).build());
+
+        addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_soundfont_files"), button -> {
+            if (this.client != null) {
+                this.client.setScreen(new SoundFontManagerScreen(this));
+            }
+        }).dimensions((this.width / 2) - 205, this.height - 25, 200, 20).build());
     }
 
     @Override
