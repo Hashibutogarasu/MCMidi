@@ -14,7 +14,6 @@ import org.chaiware.midi4j.Midi;
 import org.chaiware.midi4j.MidiInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import oshi.util.tuples.Pair;
 
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.ShortMessage;
@@ -86,10 +85,10 @@ public class MidiControlCenter extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 17, 16777215);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.playingPath, this.width / 2, 27, 16777215);
+        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 6, 16777215);
+        context.drawCenteredTextWithShadow(this.textRenderer, this.playingPath, this.width / 2, 16, 16777215);
 
-        AtomicInteger offsetY = new AtomicInteger(40);
+        AtomicInteger offsetY = new AtomicInteger(30);
 
         Text channelText = Text.translatable("mcmidi.midi.channel");
         int channelTextWidth = this.textRenderer.getWidth(channelText);
@@ -137,8 +136,8 @@ public class MidiControlCenter extends Screen {
                     offsetY.set(offsetY.get() + 10);
                 });
             }
-            catch (ConcurrentModificationException e){
-                LOGGER.info(e.getMessage());
+            catch (ConcurrentModificationException ignored){
+
             }
         }
     }

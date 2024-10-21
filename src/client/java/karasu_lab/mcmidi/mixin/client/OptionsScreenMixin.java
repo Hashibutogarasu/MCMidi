@@ -1,6 +1,7 @@
 package karasu_lab.mcmidi.mixin.client;
 
 import karasu_lab.mcmidi.MCMidi;
+import karasu_lab.mcmidi.screen.MidiControlCenter;
 import karasu_lab.mcmidi.screen.SoundFontManagerScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
@@ -43,9 +44,7 @@ public abstract class OptionsScreenMixin extends Screen {
             return new LanguageOptionsScreen(this, this.settings, client.getLanguageManager());
         }));
 
-        adder.add(this.createButton(MCMIDI_TEXT, () -> {
-            return new SoundFontManagerScreen(this, this.settings);
-        }));
+        adder.add(this.createButton(MCMIDI_TEXT, MidiControlCenter::new));
 
         return null;
     }
