@@ -1,6 +1,7 @@
 package karasu_lab.mcmidi.api.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.context.ParsedCommandNode;
@@ -20,15 +21,19 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class MidiCommand {
     public static final List<Function<String, DataCommand.ObjectType>> OBJECT_TYPE_FACTORIES;
+    private static final Logger LOGGER = LoggerFactory.getLogger(MidiCommand.class);
 
     public MidiCommand() {
     }
@@ -42,8 +47,10 @@ public class MidiCommand {
                 )
                 .then((CommandManager.literal("play").then(CommandManager.argument("targets", EntityArgumentType.entities())
                                 .then(CommandManager.argument("path", StringArgumentType.string())
-                                        .executes(MidiCommand::playMidiCommand)))
-                ))
+                                        .executes(MidiCommand::playMidiCommand)
+                                        .then(CommandManager.argument("loopCount", IntegerArgumentType.integer()).executes(MidiCommand::playMidiCommand).then(CommandManager.argument("startTick", IntegerArgumentType.integer()).executes(MidiCommand::playMidiCommand))
+                                        ))))
+                )
                 .then((CommandManager.literal("stop").executes(MidiCommand::stopMidiCommand).then(CommandManager.argument("targets", EntityArgumentType.entities())
                         .executes(MidiCommand::stopMidiCommand))
                 )
@@ -54,46 +61,74 @@ public class MidiCommand {
     private static int executeLoadCommand(CommandContext<ServerCommandSource> context){
         String path = StringArgumentType.getString(context, "path");
         Identifier id = MCMidi.id("midi/" + path);
-        Optional<File> sequence = MCMidi.midiManager.loadMidiFromFile(id);
-        sequence.ifPresentOrElse(sequence1 -> {
+        Optional<File> file = MCMidi.midiManager.loadMidiFromFile(id);
+        file.ifPresentOrElse(sequence1 -> {
 
         }, () -> {
             context.getSource().sendError(Text.literal("Failed to load MIDI file: " + id));
         });
 
-        return sequence.isPresent() ? 1 : 0;
+        return file.isPresent() ? 1 : 0;
     }
 
     private static int playMidiCommand(CommandContext<ServerCommandSource> context){
         executeLoadCommand(context);
-        String path = StringArgumentType.getString(context, "path");
+        String path = "";
+        AtomicInteger loopCount = new AtomicInteger(0);
+        AtomicInteger startTick = new AtomicInteger(0);
+
         List<ServerPlayerEntity> targets = new ArrayList<>();
         try {
-            Collection<ServerPlayerEntity> target =  EntityArgumentType.getPlayers(context, "targets");
+            Collection<ServerPlayerEntity> target =  EntityArgumentType.getOptionalPlayers(context, "targets");
             targets.addAll(target);
-        } catch (CommandSyntaxException ignored) {
+            path = StringArgumentType.getString(context, "path");
+            loopCount.set(IntegerArgumentType.getInteger(context, "loopCount"));
+            startTick.set(IntegerArgumentType.getInteger(context, "startTick"));
+        } catch (Exception ignored) {
 
         }
 
+        if(targets.isEmpty()){
+            var player = context.getSource().getPlayer();
+            if(player != null) {
+                targets.add(context.getSource().getPlayer());
+            }
+        }
+
+        if(path.isEmpty()){
+            context.getSource().sendError(Text.literal("No path provided in MIDI packet"));
+
+            return 1;
+        }
+
         Identifier id = MCMidi.id("midi/" + StringArgumentType.getString(context, "path"));
+        String finalPath = path;
         MCMidi.midiManager.loadMidiFromFile(id).ifPresent(file -> {
             List<Byte> byteList = new ArrayList<>();
 
             try {
-                byte[] data = Files.readAllBytes(file.toPath());
-                for (byte b : data) {
-                    byteList.add(b);
-                }
-            } catch (IOException ignored) {
+                var bytes = Files.readAllBytes(file.toPath());
+                List<Byte> data = Arrays.asList(new Byte[bytes.length]);
+                byteList.addAll(data);
+            } catch (IOException e) {
+                LOGGER.error(e.getMessage());
             }
 
             NbtCompound nbt = new NbtCompound();
             nbt.putByteArray("data", byteList);
             nbt.putString("state", SequencePayload.MidiPlayerState.PLAYING.getName());
-            nbt.putString("path", "midi/" + path + ".midi");
+            nbt.putString("path", "midi/" + finalPath + ".midi");
+            if(loopCount.get() > 0){
+                nbt.putInt("loopCount", loopCount.get());
+            }
+            if(startTick.get() > 0){
+                nbt.putInt("startTick", startTick.get());
+            }
 
             for (ServerPlayerEntity target : targets) {
-                ServerPlayNetworking.send(target, new SequencePayload(nbt));
+                if(ServerPlayNetworking.canSend(target, SequencePayload.ID)){
+                    ServerPlayNetworking.send(target, new SequencePayload(nbt));
+                }
             }
         });
 
@@ -106,7 +141,7 @@ public class MidiCommand {
         List<ParsedCommandNode<ServerCommandSource>> arg = context.getNodes();
         if(arg.size() > 2){
             try {
-                Collection<ServerPlayerEntity> target =  EntityArgumentType.getPlayers(context, "targets");
+                Collection<ServerPlayerEntity> target =  EntityArgumentType.getOptionalPlayers(context, "targets");
                 targets.addAll(target);
             } catch (CommandSyntaxException ignored) {
 
@@ -114,7 +149,10 @@ public class MidiCommand {
         }
 
         if(targets.isEmpty()){
-            targets.add(context.getSource().getPlayer());
+            var player = context.getSource().getPlayer();
+            if(player != null) {
+                targets.add(context.getSource().getPlayer());
+            }
         }
 
         NbtCompound nbt = new NbtCompound();

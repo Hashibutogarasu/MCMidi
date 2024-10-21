@@ -6,6 +6,7 @@ import karasu_lab.mcmidi.screen.MidiControlCenter;
 import me.shedaniel.autoconfig.AutoConfig;
 import org.chaiware.midi4j.Midi;
 import org.chaiware.midi4j.MidiInfo;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,13 +18,13 @@ import java.io.IOException;
 public class ExtendedMidi{
     private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedMidi.class);
     private final String pathToMidiFile;
-    private final Midi midi;
+    private final CustomMidi midi;
     private final MidiInfo midiInfo;
     private final ModConfig config;
 
-    public ExtendedMidi(byte[] bytes, String pathToMidiFile) throws Exception {
-        this.saveToLocal(bytes, pathToMidiFile);
-        this.midi = new Midi(pathToMidiFile);
+    public ExtendedMidi(File file) throws Exception {
+        String pathToMidiFile = file.getAbsolutePath();
+        this.midi = new CustomMidi(pathToMidiFile);
         this.midiInfo = new MidiInfo(pathToMidiFile);
         this.pathToMidiFile = pathToMidiFile;
         this.config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
@@ -33,9 +34,10 @@ public class ExtendedMidi{
         getSequencer().getTransmitter().setReceiver(receiver);
     }
 
-    public void saveToLocal(byte[] bytes, String path){
+    @Nullable
+    public String saveToLocal(byte[] bytes, String path){
         if(bytes == null || bytes.length == 0){
-            return;
+            return null;
         }
 
         try {
@@ -47,6 +49,8 @@ public class ExtendedMidi{
         } catch (InvalidMidiDataException | IOException ignored) {
 
         }
+
+        return path;
     }
 
     public void play(){
@@ -71,7 +75,7 @@ public class ExtendedMidi{
         return ((MidiAccessor)this.asMidi()).getSynthesizer();
     }
 
-    public void stop() throws Exception {
+    public void stop() {
         Sequencer sequencer = getSequencer();
         Synthesizer synthesizer = getSynthesizer();
 
@@ -98,8 +102,7 @@ public class ExtendedMidi{
         Synthesizer synthesizer = getSynthesizer();
 
         try {
-            for(Transmitter tm: sequencer.getTransmitters())
-            {
+            for(Transmitter tm: sequencer.getTransmitters()) {
                 tm.close();
             }
 
@@ -109,6 +112,14 @@ public class ExtendedMidi{
         } catch (InvalidMidiDataException | IOException | MidiUnavailableException e) {
             LOGGER.error("Failed to load soundfont: {}", path);
         }
+    }
+
+    public void setLoopCount(int count) {
+        this.getSequencer().setLoopCount(count);
+    }
+
+    public void setStartTick(long tick) {
+        this.getSequencer().setLoopStartPoint(tick);
     }
 
     public MidiInfo getMidiInfo() {

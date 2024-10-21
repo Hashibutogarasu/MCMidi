@@ -1,7 +1,9 @@
 {
   "mcmidi.midi_control_center": "Midi Control Center",
+  "mcmidi.midi_control_center.open_midi_files": "Open MIDI Files",
   "mcmidi.options.title": "MCMidi Options",
   "text.autoconfig.mcmidi.option.midiVolume": "MIDI Volume",
   "text.autoconfig.mcmidi.title": "MCMidi",
+  "text.mcmidi.openmididirectory": "Open MIDI Directory",
   "text.mcmidi.opensoundfontdirectory": "Open SoundFont Directory"
 }

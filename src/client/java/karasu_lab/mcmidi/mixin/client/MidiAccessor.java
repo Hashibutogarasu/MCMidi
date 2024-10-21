@@ -14,4 +14,10 @@ public interface MidiAccessor {
 
     @Accessor(value = "synthesizer", remap = false)
     Synthesizer getSynthesizer();
+
+    @Accessor(value = "isPaused", remap = false)
+    boolean isPaused();
+
+    @Accessor(value = "isPaused", remap = false)
+    void setPaused(boolean paused);
 }

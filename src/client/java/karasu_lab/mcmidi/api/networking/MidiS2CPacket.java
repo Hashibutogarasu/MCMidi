@@ -11,13 +11,12 @@ import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sound.midi.*;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
 public class MidiS2CPacket {
-    private static final Sequencer sequencer = MCMidiClient.CLIENT_SEQUENCER;
-    private static MidiDevice device;
     private static String playingPath;
     private static ExtendedMidi midi;
 
@@ -25,14 +24,13 @@ public class MidiS2CPacket {
         NbtCompound nbt = payload.nbt();
 
         String path = nbt.getString("path");
+        int loopCount = nbt.getInt("loopCount");
+        int startTick = nbt.getInt("startTick");
+
         SequencePayload.MidiPlayerState state = Arrays.stream(SequencePayload.MidiPlayerState.values()).filter(state1 -> state1.getName().equals(nbt.getString("state"))).toList().getFirst();
 
         if(state.equals(SequencePayload.MidiPlayerState.STOPPING)){
-            try {
-                midi.stop();
-            } catch (Exception ignored) {
-
-            }
+            midi.stop();
             return;
         }
 
@@ -41,25 +39,15 @@ public class MidiS2CPacket {
             return;
         }
 
-        Optional<MidiDevice> device = Arrays.stream(MidiSystem.getMidiDeviceInfo()).toList().stream().map(info -> {
-            try {
-                return MidiSystem.getMidiDevice(info);
-            } catch (MidiUnavailableException e) {
-                return null;
-            }
-        }).filter(Objects::nonNull).filter(midiDevice -> midiDevice.getDeviceInfo().getName().contains("VirtualMIDISynth #1")).findFirst();
-
-        device.ifPresent(midiDevice -> {
-            MidiS2CPacket.device = midiDevice;
-        });
-
         byte[] bytes = nbt.getByteArray("data");
 
+        if(midi != null){
+            midi.stop();
+        }
+
         try {
-            if(midi != null){
-                midi.stop();
-            }
-            midi = new ExtendedMidi(bytes, path);
+            midi.saveToLocal(bytes, path);
+            midi = new ExtendedMidi(new File(path));
         } catch (Exception e) {
             MCMidi.LOGGER.error("Failed to load MIDI file: {}", nbt.getString("path"));
             MCMidi.LOGGER.error(e.getMessage());
@@ -69,6 +57,15 @@ public class MidiS2CPacket {
 
         playingPath = path;
         midi.saveToLocal(bytes, path);
+
+        if(loopCount > 0){
+            midi.setLoopCount(loopCount);
+        }
+
+        if(startTick > 0){
+            midi.setStartTick(startTick);
+        }
+
         midi.play();
 
         MinecraftClient.getInstance().inGameHud.setRecordPlayingOverlay(Text.literal(path));
@@ -78,8 +75,19 @@ public class MidiS2CPacket {
         return playingPath;
     }
 
+
     @Nullable
     public static ExtendedMidi getMidi() {
         return midi;
+    }
+
+    public static void clearMidi() {
+        midi.stop();
+        midi = null;
+        playingPath = null;
+    }
+
+    public static void setMidi(ExtendedMidi extendedMidi) {
+        midi = extendedMidi;
     }
 }

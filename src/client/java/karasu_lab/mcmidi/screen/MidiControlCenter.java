@@ -6,6 +6,7 @@ import karasu_lab.mcmidi.api.networking.MidiS2CPacket;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
@@ -59,6 +60,9 @@ public class MidiControlCenter extends Screen {
 
     public MidiControlCenter(){
         this(Text.translatable("mcmidi.midi_control_center"));
+
+        midiChannelMap.clear();
+        midiStatusMap.clear();
     }
 
     protected MidiControlCenter(Text title) {
@@ -74,6 +78,12 @@ public class MidiControlCenter extends Screen {
     @Override
     protected void init() {
         super.init();
+
+        addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_midi_files"), button -> {
+            if (this.client != null) {
+                this.client.setScreen(new MidiChooseScreen(this));
+            }
+        }).dimensions((this.width / 2) - 100, this.height - 25, 200, 20).build());
     }
 
     @Override
@@ -109,7 +119,7 @@ public class MidiControlCenter extends Screen {
             try{
                 midiChannelMap.forEach((integer, pair) -> {
                     String data1 = String.format("%03d", pair.getA());
-                    String data2 = String.format("%03d", pair.getB());
+                    String data2;
 
                     Style styleA;
                     Style styleB;
@@ -120,20 +130,21 @@ public class MidiControlCenter extends Screen {
                     styleA = Style.EMPTY.withColor(color.getRGB());
 
                     int b = pair.getB();
-                    if(b == 0){
+                    if(b == 100){
                         data2 = "ON";
-                        styleB = Style.EMPTY.withColor(Colors.RED);
-                    }
-                    else if(b == 100){
-                        data2 = "OFF";
                         styleB = Style.EMPTY.withColor(Colors.GREEN);
+                    }
+                    else if(b == 0){
+                        data2 = "OFF";
+                        styleB = Style.EMPTY.withColor(Colors.RED);
                     }
                     else if(b == 64){
                         data2 = "NONE";
                         styleB = Style.EMPTY.withColor(Colors.YELLOW);
                     }
                     else{
-                        styleB = Style.EMPTY.withColor(Colors.WHITE);
+                        data2 = "ON";
+                        styleB = Style.EMPTY.withColor(getColor(b).getRGB());
                     }
 
                     Text styledTextA = Text.literal(data1).setStyle(styleA);
