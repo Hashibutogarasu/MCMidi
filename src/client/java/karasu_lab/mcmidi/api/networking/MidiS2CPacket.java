@@ -1,107 +1,85 @@
 package karasu_lab.mcmidi.api.networking;
 
+import karasu_lab.mcmidi.MCMidi;
 import karasu_lab.mcmidi.MCMidiClient;
+import karasu_lab.mcmidi.api.midi.ExtendedMidi;
+import karasu_lab.mcmidi.screen.MidiControlCenter;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.text.Text;
+import org.jetbrains.annotations.Nullable;
 
 import javax.sound.midi.*;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
 public class MidiS2CPacket {
-    private static Sequencer sequencer = MCMidiClient.CLIENT_SEQUENCER;
+    private static final Sequencer sequencer = MCMidiClient.CLIENT_SEQUENCER;
     private static MidiDevice device;
+    private static String playingPath;
+    private static ExtendedMidi midi;
 
     public static void recieve(SequencePayload payload, ClientPlayNetworking.Context context) {
         NbtCompound nbt = payload.nbt();
 
+        String path = nbt.getString("path");
         SequencePayload.MidiPlayerState state = Arrays.stream(SequencePayload.MidiPlayerState.values()).filter(state1 -> state1.getName().equals(nbt.getString("state"))).toList().getFirst();
 
-        try {
-            if(sequencer == null){
-                sequencer = MidiSystem.getSequencer(false);
+        if(state.equals(SequencePayload.MidiPlayerState.STOPPING)){
+            try {
+                midi.stop();
+            } catch (Exception ignored) {
+
             }
-
-            Optional<MidiDevice> device = Arrays.stream(MidiSystem.getMidiDeviceInfo()).toList().stream().map(info -> {
-                try {
-                    return MidiSystem.getMidiDevice(info);
-                } catch (MidiUnavailableException e) {
-                    return null;
-                }
-            }).filter(Objects::nonNull).filter(midiDevice -> midiDevice.getDeviceInfo().getName().contains("VirtualMIDISynth #1")).findFirst();
-
-            device.ifPresent(midiDevice -> {
-                MidiS2CPacket.device = midiDevice;
-            });
-
-            if(state.equals(SequencePayload.MidiPlayerState.STOPPING)){
-                stop();
-                return;
-            }
-
-            byte[] bytes = nbt.getByteArray("data");
-            play(bytes);
-        } catch (MidiUnavailableException e) {
-            MCMidiClient.LOGGER.error("Failed to load midi");
-            MCMidiClient.LOGGER.error(e.getMessage());
-        }
-    }
-
-    public static void mute(){
-        try {
-            for (MidiChannel channel : MidiSystem.getSynthesizer().getChannels()) {
-                if(!channel.getMute()){
-                    channel.setMute(true);
-                }
-            }
-        } catch (MidiUnavailableException ignored) {
-
-        }
-    }
-
-    public static void unmute(){
-        try {
-            for (MidiChannel channel : MidiSystem.getSynthesizer().getChannels()) {
-                if(channel.getMute()){
-                    channel.setMute(false);
-                }
-            }
-        } catch (MidiUnavailableException ignored) {
-
-        }
-    }
-
-    public static void stop(){
-       if(sequencer != null){
-           if(sequencer.isOpen() || sequencer.isRunning()){
-               sequencer.stop();
-               sequencer.close();
-               if(device != null && device.isOpen()){
-                   device.close();
-               }
-           }
-       }
-    }
-
-    public static void play(byte[] data) {
-        if(device == null){
             return;
         }
 
-        device.close();
-        sequencer.close();
+        if(path == null || path.isEmpty()){
+            MCMidi.LOGGER.info("No path provided in MIDI packet");
+            return;
+        }
+
+        Optional<MidiDevice> device = Arrays.stream(MidiSystem.getMidiDeviceInfo()).toList().stream().map(info -> {
+            try {
+                return MidiSystem.getMidiDevice(info);
+            } catch (MidiUnavailableException e) {
+                return null;
+            }
+        }).filter(Objects::nonNull).filter(midiDevice -> midiDevice.getDeviceInfo().getName().contains("VirtualMIDISynth #1")).findFirst();
+
+        device.ifPresent(midiDevice -> {
+            MidiS2CPacket.device = midiDevice;
+        });
+
+        byte[] bytes = nbt.getByteArray("data");
 
         try {
-            sequencer.setSequence(new ByteArrayInputStream(data));
-            sequencer.getTransmitter().setReceiver(device.getReceiver());
-            device.open();
-            sequencer.open();
-            sequencer.start();
-        } catch (InvalidMidiDataException | MidiUnavailableException | IOException e) {
-            MCMidiClient.LOGGER.error("Failed to play midi");
+            if(midi != null){
+                midi.stop();
+            }
+            midi = new ExtendedMidi(bytes, path);
+        } catch (Exception e) {
+            MCMidi.LOGGER.error("Failed to load MIDI file: {}", nbt.getString("path"));
+            MCMidi.LOGGER.error(e.getMessage());
+
+            return;
         }
+
+        playingPath = path;
+        midi.saveToLocal(bytes, path);
+        midi.play();
+
+        MinecraftClient.getInstance().inGameHud.setRecordPlayingOverlay(Text.literal(path));
+    }
+
+    public static String getPlayingPath() {
+        return playingPath;
+    }
+
+    @Nullable
+    public static ExtendedMidi getMidi() {
+        return midi;
     }
 }

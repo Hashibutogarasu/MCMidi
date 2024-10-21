@@ -7,5 +7,8 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry;
 
 @Config(name = MCMidi.MOD_ID)
 public class ModConfig implements ConfigData {
-    double midiVolume = 1.0;
+    @ConfigEntry.BoundedDiscrete(min = 0, max = 100)
+    public int midiVolume = 100;
+
+    public String soundFontPath = "";
 }

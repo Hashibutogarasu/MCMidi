@@ -3,11 +3,14 @@
   "package": "karasu_lab.mcmidi.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "client": [
-
+    "GameMenuScreenMixin",
+    "GameOptionsScreenMixin",
+    "OptionsScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "mixins": [
+    "MidiAccessor"
   ]
 }

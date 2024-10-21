@@ -51,6 +51,8 @@ dependencies {
 	modApi("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
 		exclude(group: "net.fabricmc.fabric-api")
 	}
+
+	implementation group: 'org.chaiware', name: 'midi4j', version: '1.0'
 }
 
 processResources {

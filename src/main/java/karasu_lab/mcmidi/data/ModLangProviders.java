@@ -31,9 +31,11 @@ public class ModLangProviders {
 
         @Override
         public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder translationBuilder) {
-            translationBuilder.add("options.midi", "MIDI Settings");
             translationBuilder.add("text.autoconfig.mcmidi.title", "MCMidi");
+            translationBuilder.add("mcmidi.options.title", "MCMidi Options");
             translationBuilder.add("text.autoconfig.mcmidi.option.midiVolume", "MIDI Volume");
+            translationBuilder.add("text.mcmidi.opensoundfontdirectory", "Open SoundFont Directory");
+            translationBuilder.add("mcmidi.midi_control_center", "Midi Control Center");
         }
     }
 }

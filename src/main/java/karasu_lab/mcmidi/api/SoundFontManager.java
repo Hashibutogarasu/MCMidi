@@ -349,4 +349,10 @@ public class SoundFontManager {
             return this.lister;
         }
     }
+
+    public record SoundFont(String path) {
+        public String getName() {
+            return this.path.substring(this.path.lastIndexOf("/") + 1);
+        }
+    }
 }
