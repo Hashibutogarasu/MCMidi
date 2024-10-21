@@ -109,7 +109,7 @@ public class MidiControlCenter extends Screen {
 
                     String statusFormatted = String.format("%03d", integer2);
                     context.drawText(this.textRenderer, channel, (this.width / 2) - 200, offsetY.get(), 16777215, true);
-                    var lastoffsetX = context.drawText(this.textRenderer, Text.literal("Status: " + statusFormatted),((this.width / 2) - 200) + x, offsetY.get(), 16777215, true);
+                    var lastoffsetX = context.drawText(this.textRenderer, Text.literal("Status " + statusFormatted),((this.width / 2) - 200) + x, offsetY.get(), 16777215, true);
                     lastOffsetX.set(lastoffsetX);
 
                     offsetY.addAndGet(10);
