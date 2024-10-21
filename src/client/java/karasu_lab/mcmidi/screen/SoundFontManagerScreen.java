@@ -37,7 +37,6 @@ public class SoundFontManagerScreen extends GameOptionsScreen {
 
     private SoundFontOptionListWidget soundFontOptionListWidget;
     private final ModConfig config;
-    private final FileAlterationMonitor monitor;
 
     public SoundFontManagerScreen(Screen parent) {
         this(parent, MinecraftClient.getInstance().options);
@@ -47,56 +46,8 @@ public class SoundFontManagerScreen extends GameOptionsScreen {
         super(parent, gameOptions, Text.translatable("mcmidi.options.title"));
         this.layout.setFooterHeight(53);
         this.config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
-
-        File file = new File(SOUNDFONT_DIRECTORY);
-
-        this.monitor = new FileAlterationMonitor(1000);
-        FileAlterationObserver observer = new FileAlterationObserver(file);
-        FileAlterationListener listener = new FileAlterationListenerAdaptor() {
-            @Override
-            public void onFileCreate(File file) {
-                onChanged();
-                super.onFileCreate(file);
-            }
-
-            @Override
-            public void onFileChange(File file) {
-                onChanged();
-                super.onFileChange(file);
-            }
-
-            @Override
-            public void onFileDelete(File file) {
-                onChanged();
-                super.onFileDelete(file);
-            }
-
-            void onChanged(){
-                SoundFontManagerScreen.this.soundFontOptionListWidget.clearSoundFontEntries();
-                for (String localSoundFont : getLocalSoundFonts()) {
-                    SoundFontManagerScreen.this.soundFontOptionListWidget.addSoundFontEntry(localSoundFont);
-                }
-            }
-        };
-
-        observer.addListener(listener);
-        this.monitor.addObserver(observer);
-        try {
-            this.monitor.start();
-        } catch (Exception ignored) {
-
-        }
     }
 
-    @Override
-    public void close() {
-        try {
-            this.monitor.stop();
-        } catch (Exception ignored) {
-
-        }
-        super.close();
-    }
 
     protected void initBody(){
         this.soundFontOptionListWidget = this.layout.addBody(new SoundFontOptionListWidget(this.client));

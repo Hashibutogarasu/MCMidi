@@ -23,6 +23,7 @@ import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 public class MidiControlCenter extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MidiControlCenter.class);
@@ -30,8 +31,7 @@ public class MidiControlCenter extends Screen {
     private Midi midi;
     private MidiInfo midiInfo;
 
-    private static final Map<Integer, Integer> midiStatusMap = new HashMap<>();
-    private static final Map<Integer, Pair<Integer, Integer>> midiChannelMap = new HashMap<>();
+    private static final Map<Integer, MidiNote> midiNoteMap = new HashMap<>();
 
     private static final MyReciever receiver = new MyReciever((message) -> {
         Screen currentScreen = MinecraftClient.getInstance().currentScreen;
@@ -39,30 +39,21 @@ public class MidiControlCenter extends Screen {
             controlCenter.onRecieve(message.getA(), message.getB());
         }
 
-        onRecieveStatic(message.getA(), message.getB());
-
         return 0;
     });
-
-    private static void onRecieveStatic(MidiMessage message, long timeStamp){
-
-    }
 
     private void onRecieve(MidiMessage message, long timeStamp) {
         this.playingPath = MidiS2CPacket.getPlayingPath();
         if(message instanceof ShortMessage shortMessage){
-            midiChannelMap.put(shortMessage.getChannel(), new Pair<>(shortMessage.getData1(), shortMessage.getData2()));
-            midiStatusMap.put(shortMessage.getChannel(), shortMessage.getStatus());
+            midiNoteMap.put(shortMessage.getChannel(), new MidiNote(shortMessage));
 
-            midiChannelMap.entrySet().stream().sorted(Map.Entry.comparingByKey());
+            midiNoteMap.entrySet().stream().sorted(Map.Entry.comparingByKey());
         }
     }
 
     public MidiControlCenter(){
         this(Text.translatable("mcmidi.midi_control_center"));
-
-        midiChannelMap.clear();
-        midiStatusMap.clear();
+        midiNoteMap.clear();
     }
 
     protected MidiControlCenter(Text title) {
@@ -99,108 +90,87 @@ public class MidiControlCenter extends Screen {
         context.drawCenteredTextWithShadow(this.textRenderer, this.playingPath, this.width / 2, 27, 16777215);
 
         AtomicInteger offsetY = new AtomicInteger(40);
-        AtomicInteger lastOffsetX = new AtomicInteger();
-        if(!midiStatusMap.isEmpty()){
+
+        Text channelText = Text.translatable("mcmidi.midi.channel");
+        int channelTextWidth = this.textRenderer.getWidth(channelText);
+
+        Text statusText = Text.translatable("mcmidi.midi.status");
+        int statusTextWidth = this.textRenderer.getWidth(statusText);
+
+        Text data1Text = Text.translatable("mcmidi.midi.data1");
+        int data1TextWidth = this.textRenderer.getWidth(data1Text);
+
+        Text data2Text = Text.translatable("mcmidi.midi.data2");
+        int data2TextWidth = this.textRenderer.getWidth(data2Text);
+
+        int offsetX1 = context.drawText(this.textRenderer, channelText, (this.width/ 2) - 200, offsetY.get(), 16777215, true);
+        int offsetX2 = context.drawText(this.textRenderer, statusText, offsetX1 + channelTextWidth + 10, offsetY.get(), 16777215, true);
+        int offsetX3 = context.drawText(this.textRenderer, data1Text, offsetX2 + statusTextWidth + 10, offsetY.get(), 16777215, true);
+        int offsetX4 = context.drawText(this.textRenderer, data2Text, offsetX3 + data1TextWidth + 10, offsetY.get(), 16777215, true);
+
+        offsetY.set(offsetY.get() + 10);
+        if(!midiNoteMap.isEmpty()){
             try{
-                midiStatusMap.forEach((integer, integer2) -> {
-                    String formatted = String.format("%02d", integer);
-                    Text channel = Text.literal("Channel " + formatted);
-                    int x = this.textRenderer.getWidth(channel) + 10;
+                midiNoteMap.forEach((integer, midiMessage) -> {
+                    String channelFormatted = String.format("%02d" , integer);
+                    String statusFormatted = String.format("%02d", midiMessage.getStatus());
 
-                    String statusFormatted = String.format("%03d", integer2);
-                    context.drawText(this.textRenderer, channel, (this.width / 2) - 200, offsetY.get(), 16777215, true);
-                    var lastoffsetX = context.drawText(this.textRenderer, Text.literal("Status " + statusFormatted),((this.width / 2) - 200) + x, offsetY.get(), 16777215, true);
-                    lastOffsetX.set(lastoffsetX);
+                    int data1 = midiMessage.getData1();
+                    int data2 = midiMessage.getData2();
 
-                    offsetY.addAndGet(10);
+                    String data2Value = String.valueOf(data2);
+
+                    for (NoteStatus value : NoteStatus.values()) {
+                        if(value.condition.apply(data2)){
+                            data2Value = value.name;
+                        }
+                    }
+
+                    Text data1Styled = Text.literal(String.valueOf(data1)).setStyle(Style.EMPTY.withColor(getColor(data1).getRGB()));
+                    Text data2Styled = Text.literal(String.valueOf(data2Value)).setStyle(Style.EMPTY.withColor(getColor(data2).getRGB()));
+
+                    context.drawText(this.textRenderer, channelFormatted, offsetX1 - channelTextWidth, offsetY.get(), Colors.WHITE, true);
+                    context.drawText(this.textRenderer, statusFormatted, offsetX2 - statusTextWidth, offsetY.get(), Colors.WHITE, true);
+                    context.drawText(this.textRenderer, data1Styled, offsetX3 - data1TextWidth, offsetY.get(), Colors.WHITE, true);
+                    context.drawText(this.textRenderer, data2Styled, offsetX4 - data2TextWidth, offsetY.get(), Colors.WHITE, true);
+
+                    offsetY.set(offsetY.get() + 10);
                 });
             }
             catch (ConcurrentModificationException e){
-                LOGGER.error(e.getMessage());
-            }
-        }
-
-        if(!midiChannelMap.isEmpty()){
-            AtomicInteger offsetY2 = new AtomicInteger(40);
-            try{
-                midiChannelMap.forEach((integer, pair) -> {
-                    String data1 = String.format("%03d", pair.getA());
-                    String data2;
-
-                    Style styleA;
-                    Style styleB;
-
-                    int a = pair.getA();
-                    Color color = getColor(a);
-
-                    styleA = Style.EMPTY.withColor(color.getRGB());
-
-                    int b = pair.getB();
-                    if(b == 100){
-                        data2 = "ON";
-                        styleB = Style.EMPTY.withColor(Colors.GREEN);
-                    }
-                    else if(b == 0){
-                        data2 = "OFF";
-                        styleB = Style.EMPTY.withColor(Colors.RED);
-                    }
-                    else if(b == 64){
-                        data2 = "NONE";
-                        styleB = Style.EMPTY.withColor(Colors.YELLOW);
-                    }
-                    else{
-                        data2 = "ON";
-                        styleB = Style.EMPTY.withColor(getColor(b).getRGB());
-                    }
-
-                    Text styledTextA = Text.literal(data1).setStyle(styleA);
-                    Text styledTextB = Text.literal(data2).setStyle(styleB);
-
-                    int lastoffsetX = context.drawText(this.textRenderer, styledTextA,lastOffsetX.get() + 10, offsetY2.get(), 16777215, true);
-                    context.drawText(this.textRenderer, styledTextB, lastoffsetX + 10, offsetY2.get(), 16777215, true);
-
-                    offsetY2.addAndGet(10);
-                });
-            }
-            catch (ConcurrentModificationException e) {
-                LOGGER.error(e.getMessage());
+                LOGGER.info(e.getMessage());
             }
         }
     }
 
     private Color getColor(int a){
-        Color color = new Color(0, 0, 0);
+        int r = 0, g = 0, b = 0;
 
-        if(a < 50){
-            int g = (int)(5.1 * a);
-            if(g > 255){
-                g = 255;
-            }
-            color = new Color(255, g, 0);
-        }
-        else if(a < 100){
-            int r = (int)(510 - 5.1 * a);
-            if(r > 255){
-                r = 255;
-            }
-            color = new Color(r, 255, 0);
-        }
-        else if(a < 150){
-            int b = (int)(5.1 * a);
-            if(b > 255){
-                b = 255;
-            }
-            color = new Color(0, 255, b);
-        }
-        else if(a < 200){
-            int g = (int)(510 - 5.1 * a);
-            if(g > 255){
-                g = 255;
-            }
-            color = new Color(0, g, 255);
+        if (a >= 0 && a <= 30) {
+            r = 255;
+            g = (int) (255 * (a / 30.0));
+        } else if (a >= 31 && a <= 60) {
+            g = 255;
+            r = (int) (255 * ((60 - a) / 30.0));
+        } else if (a >= 61 && a <= 90) {
+            g = 255;
+            b = (int) (255 * ((a - 60) / 30.0));
+        } else if (a >= 91 && a <= 120) {
+            b = 255;
+            g = (int) (255 * ((120 - a) / 30.0));
         }
 
-        return color;
+        if(r > 255){
+            r = 255;
+        }
+        if(g > 255){
+            g = 255;
+        }
+        if(b > 255){
+            b = 255;
+        }
+
+        return new Color(r, g, b);
     }
 
     public static MyReciever getReceiver(){
@@ -210,5 +180,47 @@ public class MidiControlCenter extends Screen {
     @Override
     public boolean shouldPause() {
         return false;
+    }
+
+    private enum NoteStatus{
+        ON(integer -> integer == 32 || integer == 100, "ON"),
+        OFF(integer -> integer == 0, "OFF"),
+        NONE(integer -> integer == 64, "NONE"),
+        ON_OTHER(integer -> integer != 32 && integer != 100 && integer != 64 && integer != 0, "ON"),
+        UNKNOWN(integer -> false, "UNKNOWN");
+
+        private final Function<Integer, Boolean> condition;
+        private final String name;
+
+        NoteStatus(Function<Integer, Boolean> condition, String name){
+            this.condition = condition;
+            this.name = name;
+        }
+    }
+
+    private record MidiNote(ShortMessage shortMessage) {
+        public int getChennel(){
+            return shortMessage.getChannel();
+        }
+
+        public int getStatus(){
+            return shortMessage.getStatus();
+        }
+
+        public int getCommand(){
+            return shortMessage.getCommand();
+        }
+
+        public byte[] getMessage(){
+            return shortMessage.getMessage();
+        }
+
+        public int getData1(){
+            return shortMessage.getData1();
+        }
+
+        public int getData2(){
+            return shortMessage.getData2();
+        }
     }
 }

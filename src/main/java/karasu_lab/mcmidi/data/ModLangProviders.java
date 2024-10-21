@@ -39,6 +39,11 @@ public class ModLangProviders {
             translationBuilder.add("mcmidi.midi_control_center.open_midi_files", "Open MIDI Files");
             translationBuilder.add("text.mcmidi.openmididirectory", "Open MIDI Directory");
             translationBuilder.add("mcmidi.midi_control_center.open_soundfont_files", "Open SoundFont Files");
+
+            translationBuilder.add("mcmidi.midi.channel", "Channel");
+            translationBuilder.add("mcmidi.midi.status", "Status");
+            translationBuilder.add("mcmidi.midi.data1", "Data1");
+            translationBuilder.add("mcmidi.midi.data2", "Data2");
         }
     }
 }

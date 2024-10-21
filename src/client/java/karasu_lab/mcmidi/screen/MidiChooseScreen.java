@@ -34,60 +34,10 @@ public class MidiChooseScreen extends GameOptionsScreen {
     private static final String MIDI_EXTENTION = ".midi";
 
     private MidiListWidget midiFileListWidget;
-    private final FileAlterationMonitor monitor;
 
     public MidiChooseScreen(Screen parent) {
         super(parent, MinecraftClient.getInstance().options, Text.translatable("mcmidi.options.title"));
         this.layout.setFooterHeight(53);
-
-        File file = new File(MIDI_DIRECTORY);
-
-        this.monitor = new FileAlterationMonitor(1000);
-        FileAlterationObserver observer = new FileAlterationObserver(file);
-        FileAlterationListener listener = new FileAlterationListenerAdaptor() {
-            @Override
-            public void onFileCreate(File file) {
-                onChanged();
-                super.onFileCreate(file);
-            }
-
-            @Override
-            public void onFileChange(File file) {
-                onChanged();
-                super.onFileChange(file);
-            }
-
-            @Override
-            public void onFileDelete(File file) {
-                onChanged();
-                super.onFileDelete(file);
-            }
-
-            void onChanged(){
-                MidiChooseScreen.this.midiFileListWidget.clearSoundFontEntries();
-                for (String localSoundFont : getLocalMidiFiles()) {
-                    MidiChooseScreen.this.midiFileListWidget.addSoundFontEntry(localSoundFont);
-                }
-            }
-        };
-
-        observer.addListener(listener);
-        this.monitor.addObserver(observer);
-        try {
-            this.monitor.start();
-        } catch (Exception ignored) {
-
-        }
-    }
-
-    @Override
-    public void close() {
-        try {
-            this.monitor.stop();
-        } catch (Exception ignored) {
-
-        }
-        super.close();
     }
 
     protected void initBody(){
