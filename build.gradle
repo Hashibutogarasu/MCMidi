@@ -11,6 +11,10 @@ base {
 	archivesName = project.archives_base_name + "-" + project.mod_version + "-" + gitVersion()
 }
 
+configurations {
+	extraLibs
+}
+
 repositories {
 	maven {
 		name = "Terraformers"
@@ -54,6 +58,7 @@ dependencies {
 	}
 
 	implementation group: 'org.chaiware', name: 'midi4j', version: '1.0'
+	extraLibs group: 'org.chaiware', name: 'midi4j', version: '1.0'
 }
 
 processResources {
