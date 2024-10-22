@@ -87,6 +87,7 @@ jar {
 	from("LICENSE") {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
+	from configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
 }
 
 // configure the maven publication
