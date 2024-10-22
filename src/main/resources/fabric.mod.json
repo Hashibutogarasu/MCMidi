@@ -35,7 +35,6 @@
 			"environment": "client"
 		}
 	],
-	"accessWidener": "mcmidi.accesswidener",
 	"depends": {
 		"fabricloader": ">=0.16.7",
 		"minecraft": "~1.21.1",
