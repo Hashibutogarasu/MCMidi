@@ -25,7 +25,7 @@ public class MCMidiClient implements ClientModInitializer {
 	KeyBinding keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
         "key.mcmidi.open", // The translation key of the keybinding's name
 		InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
-		GLFW.GLFW_KEY_R, // The keycode of the key
+		GLFW.GLFW_KEY_COMMA, // The keycode of the key
         "category.mcmidi.keybinds" // The translation key of the keybinding's category.
 	));
 

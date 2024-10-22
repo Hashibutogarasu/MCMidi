@@ -1,4 +1,6 @@
 {
+  "category.mcmidi.keybinds": "MCMidi",
+  "key.midi.open": "Open Midi Controll Center",
   "mcmidi.midi.channel": "Channel",
   "mcmidi.midi.data1": "Data1",
   "mcmidi.midi.data2": "Data2",
