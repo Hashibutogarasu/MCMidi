@@ -84,10 +84,13 @@ java {
 }
 
 jar {
+	duplicatesStrategy = DuplicatesStrategy.INCLUDE
 	from("LICENSE") {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
-	from configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
+	from configurations.extraLibs.collect {
+		it.isDirectory() ? it : zipTree(it)
+	}
 }
 
 // configure the maven publication
