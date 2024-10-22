@@ -8,8 +8,8 @@
 		"Hashibutogarasu"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://modrinth.com/mod/mcmidi/",
+		"sources": "https://github.com/Hashibutogarasu/MCMidi"
 	},
 	"license": "MIT",
 	"icon": "assets/mcmidi/icon.png",

@@ -1,4 +1,0 @@
-accessWidener v2 named
-
-accessible class net/minecraft/client/option/GameOptions$Visitor
-accessible method net/minecraft/client/option/GameOptions$Visitor visitString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
