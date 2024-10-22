@@ -1,20 +1,15 @@
 package karasu_lab.mcmidi.api.networking;
 
 import karasu_lab.mcmidi.MCMidi;
-import karasu_lab.mcmidi.MCMidiClient;
 import karasu_lab.mcmidi.api.midi.ExtendedMidi;
-import karasu_lab.mcmidi.screen.MidiControlCenter;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
-import javax.sound.midi.*;
 import java.io.File;
 import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
 
 public class MidiS2CPacket {
     private static String playingPath;

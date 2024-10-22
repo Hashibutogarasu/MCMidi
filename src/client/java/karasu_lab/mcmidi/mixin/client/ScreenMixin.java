@@ -20,41 +20,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ScreenMixin extends AbstractParentElement implements Drawable {
     @Shadow public abstract boolean shouldPause();
 
-    @Inject(method = "<init>", at = @At("RETURN"))
-    private void init(Text title, CallbackInfo ci) {
-        try{
-            var extendedmidi = MidiS2CPacket.getMidi();
-            if(extendedmidi != null && shouldPause() && extendedmidi.asMidi().isPlaying()){
-                extendedmidi.asMidi().togglePause();
-            }
-        } catch (Exception ignored) {
-
-        }
-    }
-
     @Inject(method = "render", at = @At("RETURN"))
     private void render(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        if(MinecraftClient.getInstance().currentScreen instanceof LevelLoadingScreen || MinecraftClient.getInstance().currentScreen instanceof CreditsScreen){
+        if(MinecraftClient.getInstance().currentScreen instanceof TitleScreen || MinecraftClient.getInstance().currentScreen instanceof CreditsScreen){
             try{
                 var extendedmidi = MidiS2CPacket.getMidi();
-                if(extendedmidi != null && extendedmidi.asMidi().isPlaying()){
+                if(extendedmidi != null){
                     MidiS2CPacket.clearMidi();
                 }
             } catch (Exception ignored) {
 
             }
-        }
-    }
-
-    @Inject(method = "close", at = @At("HEAD"))
-    private void close(CallbackInfo ci) {
-        try{
-            var extendedmidi = MidiS2CPacket.getMidi();
-            if(extendedmidi != null && shouldPause()){
-                extendedmidi.asMidi().togglePause();
-            }
-        } catch (Exception ignored) {
-
         }
     }
 }

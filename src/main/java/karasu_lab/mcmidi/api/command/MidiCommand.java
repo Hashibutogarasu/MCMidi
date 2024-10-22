@@ -107,7 +107,7 @@ public class MidiCommand {
             List<Byte> byteList = new ArrayList<>();
 
             try {
-                var bytes = Files.readAllBytes(file.toPath());
+                byte[] bytes = Files.readAllBytes(file.toPath());
                 List<Byte> data = Arrays.asList(new Byte[bytes.length]);
                 byteList.addAll(data);
             } catch (IOException e) {
@@ -149,7 +149,7 @@ public class MidiCommand {
         }
 
         if(targets.isEmpty()){
-            var player = context.getSource().getPlayer();
+            ServerPlayerEntity player = context.getSource().getPlayer();
             if(player != null) {
                 targets.add(context.getSource().getPlayer());
             }

@@ -6,7 +6,6 @@ import karasu_lab.mcmidi.screen.MidiControlCenter;
 import me.shedaniel.autoconfig.AutoConfig;
 import org.chaiware.midi4j.Midi;
 import org.chaiware.midi4j.MidiInfo;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +20,7 @@ public class ExtendedMidi{
     private final CustomMidi midi;
     private final MidiInfo midiInfo;
     private final ModConfig config;
+    private final MidiAccessor midiAccessor;
 
     public ExtendedMidi(File file) throws Exception {
         String pathToMidiFile = file.getAbsolutePath();
@@ -28,16 +28,16 @@ public class ExtendedMidi{
         this.midiInfo = new MidiInfo(pathToMidiFile);
         this.pathToMidiFile = pathToMidiFile;
         this.config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
+        this.midiAccessor = (MidiAccessor)this.asMidi();
     }
 
     public void setReceiver(Receiver receiver) throws Exception {
         getSequencer().getTransmitter().setReceiver(receiver);
     }
 
-    @Nullable
-    public String saveToLocal(byte[] bytes, String path){
+    public void saveToLocal(byte[] bytes, String path){
         if(bytes == null || bytes.length == 0){
-            return null;
+            return;
         }
 
         try {
@@ -49,8 +49,6 @@ public class ExtendedMidi{
         } catch (InvalidMidiDataException | IOException ignored) {
 
         }
-
-        return path;
     }
 
     public void play(){
@@ -60,6 +58,7 @@ public class ExtendedMidi{
             this.setSoundFont(config.soundFontPath);
             this.setReceiver(MidiControlCenter.getReceiver());
             this.asMidi().play();
+            LOGGER.info("Playing MIDI file: {}", this.pathToMidiFile);
         }
         catch (Exception e) {
             LOGGER.error("Failed to play MIDI file: {}", this.pathToMidiFile);
@@ -68,7 +67,7 @@ public class ExtendedMidi{
     }
 
     public Sequencer getSequencer() {
-        return ((MidiAccessor)this.asMidi()).getSequencer();
+        return this.midiAccessor.getSequencer();
     }
 
     public Synthesizer getSynthesizer() {
@@ -76,21 +75,50 @@ public class ExtendedMidi{
     }
 
     public void stop() {
-        Sequencer sequencer = getSequencer();
-        Synthesizer synthesizer = getSynthesizer();
+        if(this.midi == null){
+            LOGGER.error("Midi is null");
+            return;
+        }
 
-        if(sequencer != null){
-            if(sequencer.isOpen() || sequencer.isRunning()){
-                sequencer.stop();
-                sequencer.close();
-                if(synthesizer != null && synthesizer.isOpen()){
-                    synthesizer.close();
+        Sequencer sequencer = this.getMidiAccessor().getSequencer();
+        Synthesizer synthesizer = this.getMidiAccessor().getSynthesizer();
+
+        LOGGER.info("Stopping MIDI playback");
+
+        try{
+            if(sequencer != null){
+                if(sequencer.isOpen() || sequencer.isRunning()){
+                    if(synthesizer.isOpen()){
+                        sequencer.getReceiver().close();
+                        sequencer.stop();
+                        sequencer.close();
+                        removeTracks();
+
+                        synthesizer.close();
+                        synthesizer.unloadAllInstruments(synthesizer.getDefaultSoundbank());
+                    }
                 }
+            }
+        }
+        catch (Exception e){
+            LOGGER.error("Failed to stop MIDI playback");
+            LOGGER.error(e.getMessage());
+        }
+    }
+
+    private void removeTracks(){
+        Sequencer sequencer = getSequencer();
+        Sequence sequence = sequencer.getSequence();
+
+        if(sequence != null){
+            Track[] tracks = sequence.getTracks();
+            for(Track track: tracks){
+                sequence.deleteTrack(track);
             }
         }
     }
 
-    public void setSoundFont(String path) throws Exception {
+    public void setSoundFont(String path) {
         File file = new File(path);
 
         if(!file.exists() || file.isDirectory()){
@@ -128,5 +156,9 @@ public class ExtendedMidi{
 
     public Midi asMidi() {
         return midi;
+    }
+
+    public MidiAccessor getMidiAccessor() {
+        return midiAccessor;
     }
 }

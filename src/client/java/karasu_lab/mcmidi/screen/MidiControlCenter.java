@@ -10,7 +10,6 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
-import org.chaiware.midi4j.Midi;
 import org.chaiware.midi4j.MidiInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,21 +26,22 @@ import java.util.function.Function;
 public class MidiControlCenter extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MidiControlCenter.class);
     private String playingPath = "";
-    private Midi midi;
+    private ExtendedMidi midi;
     private MidiInfo midiInfo;
+    private final Screen parent;
 
     private static final Map<Integer, MidiNote> midiNoteMap = new HashMap<>();
 
     private static final MyReciever receiver = new MyReciever((message) -> {
         Screen currentScreen = MinecraftClient.getInstance().currentScreen;
         if(currentScreen instanceof MidiControlCenter controlCenter){
-            controlCenter.onRecieve(message.getA(), message.getB());
+            controlCenter.onRecieve(message.getA());
         }
 
         return 0;
     });
 
-    private void onRecieve(MidiMessage message, long timeStamp) {
+    private void onRecieve(MidiMessage message) {
         this.playingPath = MidiS2CPacket.getPlayingPath();
         if(message instanceof ShortMessage shortMessage){
             midiNoteMap.put(shortMessage.getChannel(), new MidiNote(shortMessage));
@@ -50,16 +50,22 @@ public class MidiControlCenter extends Screen {
     }
 
     public MidiControlCenter(){
-        this(Text.translatable("mcmidi.midi_control_center"));
+        this(MinecraftClient.getInstance().currentScreen);
         midiNoteMap.clear();
     }
 
-    protected MidiControlCenter(Text title) {
+    public MidiControlCenter(Screen parent){
+        this(Text.translatable("mcmidi.midi_control_center"), parent);
+        midiNoteMap.clear();
+    }
+
+    protected MidiControlCenter(Text title, Screen parent) {
         super(title);
+        this.parent = parent;
         ExtendedMidi extendedmidi = MidiS2CPacket.getMidi();
 
         if(extendedmidi != null){
-            this.midi = extendedmidi.asMidi();
+            this.midi = extendedmidi;
             this.midiInfo = extendedmidi.getMidiInfo();
         }
     }
@@ -68,17 +74,27 @@ public class MidiControlCenter extends Screen {
     protected void init() {
         super.init();
 
-        addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_midi_files"), button -> {
-            if (this.client != null) {
-                this.client.setScreen(new MidiChooseScreen(this));
-            }
-        }).dimensions((this.width / 2) + 5, this.height - 25, 200, 20).build());
-
         addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_soundfont_files"), button -> {
             if (this.client != null) {
                 this.client.setScreen(new SoundFontManagerScreen(this));
             }
-        }).dimensions((this.width / 2) - 205, this.height - 25, 200, 20).build());
+        }).dimensions((this.width / 2) - 205, this.height - 25, 90, 20).build());
+
+        addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_midi_files"), button -> {
+            if (this.client != null) {
+                this.client.setScreen(new MidiChooseScreen(this));
+            }
+        }).dimensions((this.width / 2) - 110, this.height - 25, 90, 20).build());
+
+        addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_sound_controller"), button -> {
+            if (this.client != null) {
+                this.client.setScreen(new SoundControllerScreen(this));
+            }
+        }).dimensions((this.width / 2) - 15, this.height - 25, 90, 20).build());
+
+        addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.close"), button -> {
+            this.close();
+        }).dimensions((this.width / 2) + 80, this.height - 25, 110, 20).build());
     }
 
     @Override
@@ -178,6 +194,22 @@ public class MidiControlCenter extends Screen {
     @Override
     public boolean shouldPause() {
         return false;
+    }
+
+    @Override
+    public void close() {
+        if(this.parent != null && midi != null){
+            if (this.client != null) {
+                super.close();
+                this.client.setScreen(this);
+            }
+            this.midi.stop();
+        }
+
+        if (this.client != null) {
+            this.client.setScreen(this.parent);
+        }
+
     }
 
     private enum NoteStatus{
