@@ -5,10 +5,8 @@ This mod allows you to play midi files.
 ## Commands
 - `/midi play [targets] [path_to_midi(Optional)] [loopCount(Optional)] [startTick(Optional)]`
 
-The midi files is located to `$WorldSavePath/generated/mcmidi/midi/*.midi`
+The midi files is located to `$ClientPath/midi/mcmidi/midi/*.midi`
 If the command run, server will send a midi file to your client and play it in client.
-
-Sent midi file is saved to `$ClientPath/midi`
 
 - `/midi stop [targets]`
 
