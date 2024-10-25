@@ -88,7 +88,13 @@ public class MidiControlCenter extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 6, 16777215);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.midi.getPlayingPath(), this.width / 2, 16, 16777215);
+
+        if(this.midi != null){
+            context.drawCenteredTextWithShadow(this.textRenderer, this.midi.getPlayingPath(), this.width / 2, 16, 16777215);
+        }
+        else {
+            context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("mcmidi.text.no_midi"), this.width / 2, 16, 16777215);
+        }
 
         AtomicInteger offsetY = new AtomicInteger(30);
 

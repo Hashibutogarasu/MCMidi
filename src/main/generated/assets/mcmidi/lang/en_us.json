@@ -12,6 +12,7 @@
   "mcmidi.midi_control_center.open_soundfont_files": "SoundFonts",
   "mcmidi.midi_sound_controller": "MIDI Sound Controller",
   "mcmidi.options.title": "MCMidi Options",
+  "mcmidi.text.no_midi": "No MIDI is playing",
   "text.autoconfig.mcmidi.option.midiVolume": "MIDI Volume",
   "text.autoconfig.mcmidi.title": "MCMidi",
   "text.mcmidi.openmididirectory": "Open MIDI Directory",

@@ -50,6 +50,7 @@ public class ModLangProviders {
 
             translationBuilder.add("category.mcmidi.keybinds", "MCMidi");
             translationBuilder.add("key.midi.open", "Open Midi Controll Center");
+            translationBuilder.add("mcmidi.text.no_midi", "No MIDI is playing");
         }
     }
 }
