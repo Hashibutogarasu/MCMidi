@@ -25,7 +25,6 @@ import java.util.function.Function;
 
 public class MidiControlCenter extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MidiControlCenter.class);
-    private ExtendedMidi midi;
     private final Screen parent;
 
     private static final Map<Integer, MidiNote> midiNoteMap = new HashMap<>();
@@ -43,11 +42,6 @@ public class MidiControlCenter extends Screen {
     protected MidiControlCenter(Text title, Screen parent) {
         super(title);
         this.parent = parent;
-        ExtendedMidi extendedmidi = ExtendedMidi.getCurrent();
-
-        if(extendedmidi != null){
-            this.midi = extendedmidi;
-        }
     }
 
     public void onRecieve(MidiMessage message) {
@@ -89,8 +83,9 @@ public class MidiControlCenter extends Screen {
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 6, 16777215);
 
-        if(this.midi != null){
-            context.drawCenteredTextWithShadow(this.textRenderer, this.midi.getPlayingPath(), this.width / 2, 16, 16777215);
+        ExtendedMidi midi = ExtendedMidi.getCurrent();
+        if(midi != null){
+            context.drawCenteredTextWithShadow(this.textRenderer, midi.getPlayingPath(), this.width / 2, 16, 16777215);
         }
         else {
             context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("mcmidi.text.no_midi"), this.width / 2, 16, 16777215);
@@ -187,18 +182,16 @@ public class MidiControlCenter extends Screen {
 
     @Override
     public void close() {
+        ExtendedMidi midi = ExtendedMidi.getCurrent();
         if(this.parent != null && midi != null){
             if (this.client != null) {
                 super.close();
                 this.client.setScreen(this);
             }
-            this.midi.stop();
+            midi.stop();
         }
 
-        if (this.client != null) {
-            this.client.setScreen(this.parent);
-        }
-
+        super.close();
     }
 
     private enum NoteStatus{
