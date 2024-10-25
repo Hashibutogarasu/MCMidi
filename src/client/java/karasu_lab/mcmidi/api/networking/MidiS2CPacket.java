@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -25,7 +26,7 @@ public class MidiS2CPacket {
         SequencePayload.MidiPlayerState state = Arrays.stream(SequencePayload.MidiPlayerState.values()).filter(state1 -> state1.getName().equals(nbt.getString("state"))).toList().getFirst();
 
         if(state.equals(SequencePayload.MidiPlayerState.STOPPING)){
-            midi.stop();
+            ExtendedMidi.getCurrent().stop();
             return;
         }
 
@@ -36,16 +37,16 @@ public class MidiS2CPacket {
 
         byte[] bytes = nbt.getByteArray("data");
 
-        if(midi != null){
-            midi.stop();
-        }
-
+        var current = ExtendedMidi.getCurrent();
         try {
-            if (midi != null) {
-                midi.saveToLocal(bytes, path);
+            if(current != null){
+                current.stop();
             }
-            midi = new ExtendedMidi(new File(path));
+            midi = new ExtendedMidi(bytes, Identifier.of(path));
         } catch (Exception e) {
+            if(current != null){
+                current.clear();
+            }
             MCMidi.LOGGER.error("Failed to load MIDI file: {}", nbt.getString("path"));
             MCMidi.LOGGER.error(e.getMessage());
 
@@ -63,7 +64,7 @@ public class MidiS2CPacket {
             midi.setStartTick(startTick);
         }
 
-        midi.play();
+        midi.playAsync();
 
         MinecraftClient.getInstance().inGameHud.setRecordPlayingOverlay(Text.literal(path));
     }

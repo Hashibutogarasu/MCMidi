@@ -72,7 +72,6 @@ public class MidiCommand {
     }
 
     private static int playMidiCommand(CommandContext<ServerCommandSource> context){
-        executeLoadCommand(context);
         String path = "";
         AtomicInteger loopCount = new AtomicInteger(0);
         AtomicInteger startTick = new AtomicInteger(0);
