@@ -1,6 +1,7 @@
 package karasu_lab.mcmidi.screen;
 
 import karasu_lab.mcmidi.api.SoundFontManager;
+import karasu_lab.mcmidi.api.midi.ExtendedMidi;
 import karasu_lab.mcmidi.config.ModConfig;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.api.EnvType;
@@ -18,10 +19,6 @@ import net.minecraft.client.option.GameOptions;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 import net.minecraft.util.Util;
-import org.apache.commons.io.monitor.FileAlterationListener;
-import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
-import org.apache.commons.io.monitor.FileAlterationMonitor;
-import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Environment(EnvType.CLIENT)
-public class SoundFontManagerScreen extends GameOptionsScreen {
+public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(SoundFontManagerScreen.class);
     private static final String SOUNDFONT_DIRECTORY = "soundfont";
     private static final String SOUNDFONT_EXTENTION = ".sf2";
@@ -46,8 +43,14 @@ public class SoundFontManagerScreen extends GameOptionsScreen {
         super(parent, gameOptions, Text.translatable("mcmidi.options.title"));
         this.layout.setFooterHeight(53);
         this.config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
-    }
 
+        ExtendedMidi current = ExtendedMidi.getCurrent();
+
+        if(current != null){
+            current.stop();
+            current.clear();
+        }
+    }
 
     protected void initBody(){
         this.soundFontOptionListWidget = this.layout.addBody(new SoundFontOptionListWidget(this.client));
@@ -92,6 +95,11 @@ public class SoundFontManagerScreen extends GameOptionsScreen {
         AutoConfig.getConfigHolder(ModConfig.class).save();
 
         this.close();
+    }
+
+    @Override
+    public void close() {
+        super.close();
     }
 
     public void openSoundFontDirectory() {

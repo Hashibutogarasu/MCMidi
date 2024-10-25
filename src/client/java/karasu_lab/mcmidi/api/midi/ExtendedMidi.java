@@ -4,6 +4,7 @@ import karasu_lab.mcmidi.config.ModConfig;
 import karasu_lab.mcmidi.screen.MidiControlCenter;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +31,11 @@ public class ExtendedMidi{
     public ExtendedMidi(byte[] bytes, Identifier identifier) throws Exception {
         this.config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
         this.identifier = identifier;
+
         this.bytes = bytes;
 
         this.sequencer = MidiSystem.getSequencer();
-        this.sequence = MidiSystem.getSequence(new ByteArrayInputStream(bytes));
+        this.sequence = MidiSystem.getSequence(new ByteArrayInputStream(this.bytes));
 
         this.synthesizer = MidiSystem.getSynthesizer();
 
@@ -106,6 +108,7 @@ public class ExtendedMidi{
         if(current != null){
             current.stop();
             current = null;
+
         }
     }
 
@@ -141,7 +144,7 @@ public class ExtendedMidi{
     public void setPosition(long position){
         LOGGER.info("Setting position to: {}", position);
         this.position = position;
-        this.sequencer.setTickPosition(position);
+        this.sequencer.setTickPosition(this.position);
     }
 
     public void pause(){
@@ -184,5 +187,17 @@ public class ExtendedMidi{
 
     public void setStartTick(long tick) {
         this.sequencer.setLoopStartPoint(tick);
+    }
+
+    public boolean isPlaying(){
+        return this.sequencer.isRunning();
+    }
+
+    public Text getPlayingPath() {
+        return Text.literal(this.identifier.getPath());
+    }
+
+    public byte[] getBytes() {
+        return this.bytes;
     }
 }

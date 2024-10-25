@@ -4,7 +4,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
-public class SoundControllerScreen extends Screen {
+public class SoundControllerScreen extends Screen implements IScreen {
     private final Screen parent;
 
     public SoundControllerScreen(Screen parent) {
@@ -24,8 +24,7 @@ public class SoundControllerScreen extends Screen {
 
     @Override
     public void close() {
-        if (this.client != null) {
-            this.client.setScreen(this.parent);
-        }
+        super.close();
+        this.playCurrent();
     }
 }

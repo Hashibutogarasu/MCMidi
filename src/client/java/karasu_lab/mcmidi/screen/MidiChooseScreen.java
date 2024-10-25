@@ -17,10 +17,6 @@ import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
-import org.apache.commons.io.monitor.FileAlterationListener;
-import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
-import org.apache.commons.io.monitor.FileAlterationMonitor;
-import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Environment(EnvType.CLIENT)
-public class MidiChooseScreen extends GameOptionsScreen {
+public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
     private static final Logger LOGGER = LoggerFactory.getLogger(MidiChooseScreen.class);
     private static final String MIDI_DIRECTORY = "midi/mcmidi/midi";
     private static final String MIDI_EXTENTION = ".midi";
@@ -40,6 +36,12 @@ public class MidiChooseScreen extends GameOptionsScreen {
     public MidiChooseScreen(Screen parent) {
         super(parent, MinecraftClient.getInstance().options, Text.translatable("mcmidi.options.title"));
         this.layout.setFooterHeight(53);
+        ExtendedMidi current = ExtendedMidi.getCurrent();
+
+        if(current != null){
+            current.stop();
+            current.clear();
+        }
     }
 
     protected void initBody(){
@@ -66,6 +68,11 @@ public class MidiChooseScreen extends GameOptionsScreen {
     @Override
     protected void addOptions() {
 
+    }
+
+    @Override
+    public void close() {
+        super.close();
     }
 
     private void onDone(){

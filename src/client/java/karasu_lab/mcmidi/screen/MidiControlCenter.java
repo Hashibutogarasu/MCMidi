@@ -25,7 +25,6 @@ import java.util.function.Function;
 
 public class MidiControlCenter extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MidiControlCenter.class);
-    private String playingPath = "";
     private ExtendedMidi midi;
     private final Screen parent;
 
@@ -52,7 +51,6 @@ public class MidiControlCenter extends Screen {
     }
 
     public void onRecieve(MidiMessage message) {
-        this.playingPath = MidiS2CPacket.getPlayingPath();
         if(message instanceof ShortMessage shortMessage){
             midiNoteMap.put(shortMessage.getChannel(), new MidiNote(shortMessage));
             midiNoteMap.entrySet().stream().sorted(Map.Entry.comparingByKey());
@@ -90,7 +88,7 @@ public class MidiControlCenter extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 6, 16777215);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.playingPath, this.width / 2, 16, 16777215);
+        context.drawCenteredTextWithShadow(this.textRenderer, this.midi.getPlayingPath(), this.width / 2, 16, 16777215);
 
         AtomicInteger offsetY = new AtomicInteger(30);
 
