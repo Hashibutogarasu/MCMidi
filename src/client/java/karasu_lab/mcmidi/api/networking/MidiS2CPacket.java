@@ -9,7 +9,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.Arrays;
 
 public class MidiS2CPacket {
@@ -54,7 +53,6 @@ public class MidiS2CPacket {
         }
 
         playingPath = path;
-        midi.saveToLocal(bytes, path);
 
         if(loopCount > 0){
             midi.setLoopCount(loopCount);
