@@ -194,6 +194,9 @@ public class ExtendedMidi{
     }
 
     public Text getPlayingPath() {
+        if(this.identifier == null){
+            return Text.literal("No MIDI is playing");
+        }
         return Text.literal(this.identifier.getPath());
     }
 
