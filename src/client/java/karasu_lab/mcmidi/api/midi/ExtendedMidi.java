@@ -1,38 +1,51 @@
 package karasu_lab.mcmidi.api.midi;
 
 import karasu_lab.mcmidi.config.ModConfig;
-import karasu_lab.mcmidi.mixin.client.MidiAccessor;
 import karasu_lab.mcmidi.screen.MidiControlCenter;
 import me.shedaniel.autoconfig.AutoConfig;
-import org.chaiware.midi4j.Midi;
-import org.chaiware.midi4j.MidiInfo;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sound.midi.*;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ExtendedMidi{
     private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedMidi.class);
-    private final String pathToMidiFile;
-    private final CustomMidi midi;
-    private final MidiInfo midiInfo;
     private final ModConfig config;
-    private final MidiAccessor midiAccessor;
+    private final byte[] bytes;
+    private final Identifier identifier;
 
-    public ExtendedMidi(File file) throws Exception {
-        String pathToMidiFile = file.getAbsolutePath();
-        this.midi = new CustomMidi(pathToMidiFile);
-        this.midiInfo = new MidiInfo(pathToMidiFile);
-        this.pathToMidiFile = pathToMidiFile;
+    private final Sequencer sequencer;
+    private final Sequence sequence;
+    private final Synthesizer synthesizer;
+
+    private static ExtendedMidi current;
+
+    private long position;
+
+    public ExtendedMidi(byte[] bytes, Identifier identifier) throws Exception {
         this.config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
-        this.midiAccessor = (MidiAccessor)this.asMidi();
+        this.identifier = identifier;
+        this.bytes = bytes;
+
+        this.sequencer = MidiSystem.getSequencer();
+        this.sequence = MidiSystem.getSequence(new ByteArrayInputStream(bytes));
+
+        this.synthesizer = MidiSystem.getSynthesizer();
+
+        current = this;
     }
 
-    public void setReceiver(Receiver receiver) throws Exception {
-        getSequencer().getTransmitter().setReceiver(receiver);
+    public static ExtendedMidi getCurrent() {
+        return current;
+    }
+
+    public Identifier getIdentifier() {
+        return identifier;
     }
 
     public void saveToLocal(byte[] bytes, String path){
@@ -51,83 +64,106 @@ public class ExtendedMidi{
         }
     }
 
+    public void playAsync(){
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(this::play);
+    }
+
     public void play(){
         try{
-            this.getSequencer().open();
-            this.getSequencer().setSequence(MidiSystem.getSequence(new File(this.pathToMidiFile)));
+            this.sequencer.setSequence(this.sequence);
+            this.synthesizer.open();
+            this.sequencer.open();
             this.setSoundFont(config.soundFontPath);
-            this.setReceiver(MidiControlCenter.getReceiver());
-            this.asMidi().play();
-            LOGGER.info("Playing MIDI file: {}", this.pathToMidiFile);
+            this.sequencer.start();
+
+            this.sequencer.getTransmitter().setReceiver(new MyReciever(midiMessageLongPair -> {
+                if(MinecraftClient.getInstance().currentScreen instanceof MidiControlCenter controlCenter){
+                    controlCenter.onRecieve(midiMessageLongPair.getA());
+                }
+
+                return 0;
+            }));
+
+            LOGGER.info("Playing MIDI: {}", this.identifier);
         }
         catch (Exception e) {
-            LOGGER.error("Failed to play MIDI file: {}", this.pathToMidiFile);
+            LOGGER.error("Failed to play MIDI: {}", this.identifier);
             LOGGER.error(e.getMessage());
         }
-    }
-
-    public Sequencer getSequencer() {
-        return this.midiAccessor.getSequencer();
-    }
-
-    public Synthesizer getSynthesizer() {
-        return ((MidiAccessor)this.asMidi()).getSynthesizer();
     }
 
     public void stop() {
-        if(this.midi == null){
-            LOGGER.error("Midi is null");
-            return;
-        }
-
-        Sequencer sequencer = this.getMidiAccessor().getSequencer();
-        Synthesizer synthesizer = this.getMidiAccessor().getSynthesizer();
-
-        LOGGER.info("Stopping MIDI playback");
-
-        try{
-            if(sequencer != null){
-                if(sequencer.isOpen() || sequencer.isRunning()){
-                    if(synthesizer.isOpen()){
-                        sequencer.getReceiver().close();
-                        sequencer.stop();
-                        sequencer.close();
-                        removeTracks();
-
-                        synthesizer.close();
-                        synthesizer.unloadAllInstruments(synthesizer.getDefaultSoundbank());
-                    }
-                }
-            }
-        }
-        catch (Exception e){
-            LOGGER.error("Failed to stop MIDI playback");
-            LOGGER.error(e.getMessage());
+        LOGGER.info("Stopping current midi: {}", getCurrent().getIdentifier());
+        if(this.sequencer.isOpen()){
+            this.sequencer.stop();
+            this.sequencer.close();
+            this.synthesizer.close();
         }
     }
 
-    private void removeTracks(){
-        Sequencer sequencer = getSequencer();
-        Sequence sequence = sequencer.getSequence();
-
-        if(sequence != null){
-            Track[] tracks = sequence.getTracks();
-            for(Track track: tracks){
-                sequence.deleteTrack(track);
-            }
+    public void clear(){
+        if(current != null){
+            current.stop();
+            current = null;
         }
+    }
+
+    public static void pauseCurrent(){
+        var current = ExtendedMidi.getCurrent();
+        if(current != null){
+            current.pause();
+        }
+    }
+
+    public void stopCurrent(){
+        var current = ExtendedMidi.getCurrent();
+        if(current != null){
+            current.stop();
+        }
+    }
+
+    public long getPosition(){
+        var current = ExtendedMidi.getCurrent();
+        if(current != null){
+            return current.sequencer.getTickPosition();
+        }
+        return 0;
+    }
+
+    public static void updatePosition(){
+        var current = ExtendedMidi.getCurrent();
+        if(current != null){
+            current.position = current.sequencer.getTickPosition();
+        }
+    }
+
+    public void setPosition(long position){
+        LOGGER.info("Setting position to: {}", position);
+        this.position = position;
+        this.sequencer.setTickPosition(position);
+    }
+
+    public void pause(){
+        if(this.sequencer.isOpen()){
+            this.stop();
+        }
+    }
+
+    public void setPotision(long potision){
+        this.sequencer.setTickPosition(potision);
     }
 
     public void setSoundFont(String path) {
         File file = new File(path);
 
         if(!file.exists() || file.isDirectory()){
-            LOGGER.error("Soundfont file does not exist: {}", path);
+            LOGGER.error("Soundfont file does not exist use default");
             return;
         }
 
-        Sequencer sequencer = getSequencer();
-        Synthesizer synthesizer = getSynthesizer();
+        Sequencer sequencer = this.sequencer;
+        Synthesizer synthesizer = this.synthesizer;
 
         try {
             for(Transmitter tm: sequencer.getTransmitters()) {
@@ -143,22 +179,10 @@ public class ExtendedMidi{
     }
 
     public void setLoopCount(int count) {
-        this.getSequencer().setLoopCount(count);
+        this.sequencer.setLoopCount(count);
     }
 
     public void setStartTick(long tick) {
-        this.getSequencer().setLoopStartPoint(tick);
-    }
-
-    public MidiInfo getMidiInfo() {
-        return midiInfo;
-    }
-
-    public Midi asMidi() {
-        return midi;
-    }
-
-    public MidiAccessor getMidiAccessor() {
-        return midiAccessor;
+        this.sequencer.setLoopStartPoint(tick);
     }
 }

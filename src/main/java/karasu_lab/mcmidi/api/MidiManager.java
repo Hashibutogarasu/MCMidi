@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
 import java.io.*;
 import java.nio.file.*;
@@ -35,7 +34,7 @@ public class MidiManager {
     private final Map<Identifier, Optional<Sequence>> midis = Maps.newConcurrentMap();
     private final DataFixer dataFixer;
     private ResourceManager resourceManager;
-    private final Path generatedPath;
+    private Path midisPath;
     private final List<Provider> providers;
     private final RegistryEntryLookup<Block> blockLookup;
     private static final ResourceFinder MIDI_NBT_RESOURCE_FINDER = new ResourceFinder(MIDI_DIRECTORY, MIDI_EXTENSION);
@@ -43,7 +42,13 @@ public class MidiManager {
     public MidiManager(ResourceManager resourceManager, LevelStorage.Session session, DataFixer dataFixer, RegistryEntryLookup<Block> blockLookup){
         this.resourceManager = resourceManager;
         this.dataFixer = dataFixer;
-        this.generatedPath = session.getDirectory(WorldSavePath.GENERATED).normalize();
+        this.midisPath = Path.of(MIDI_DIRECTORY).toAbsolutePath();
+        try {
+            this.midisPath = this.midisPath.toRealPath();
+        }
+        catch (IOException exception){
+            LOGGER.error("Failed to resolve real path for midi directory", exception);
+        }
         this.blockLookup = blockLookup;
         ImmutableList.Builder<Provider> builder = ImmutableList.builder();
         builder.add(new Provider(this::loadMidiFromFile, this::streamMidisFromFile));
@@ -61,12 +66,12 @@ public class MidiManager {
     }
 
     public Stream<Identifier> streamMidisFromGameTestFile() {
-        if (!Files.isDirectory(this.generatedPath, new LinkOption[0])) {
+        if (!Files.isDirectory(this.midisPath, new LinkOption[0])) {
             return Stream.empty();
         } else {
             try {
                 List<Identifier> list = new ArrayList<>();
-                DirectoryStream<Path> directoryStream = Files.newDirectoryStream(this.generatedPath, (pathx) -> {
+                DirectoryStream<Path> directoryStream = Files.newDirectoryStream(this.midisPath, (pathx) -> {
                     return Files.isDirectory(pathx, new LinkOption[0]);
                 });
 
@@ -113,12 +118,12 @@ public class MidiManager {
     }
 
     public Stream<Identifier> streamMidisFromFile() {
-        if (!Files.isDirectory(this.generatedPath, new LinkOption[0])) {
+        if (!Files.isDirectory(this.midisPath, new LinkOption[0])) {
             return Stream.empty();
         } else {
             try {
                 List<Identifier> list = new ArrayList<>();
-                DirectoryStream<Path> directoryStream = Files.newDirectoryStream(this.generatedPath, (pathx) -> {
+                DirectoryStream<Path> directoryStream = Files.newDirectoryStream(this.midisPath, (pathx) -> {
                     return Files.isDirectory(pathx, new LinkOption[0]);
                 });
 
@@ -249,10 +254,11 @@ public class MidiManager {
     }
 
     public Optional<File> loadMidiFromFile(Identifier id) {
-        if (!Files.isDirectory(this.generatedPath, new LinkOption[0])) {
+        if (!Files.isDirectory(this.midisPath, new LinkOption[0])) {
             return Optional.empty();
         } else {
             Path path = this.getMidiPath(id, MIDI_EXTENSION);
+            LOGGER.info("Loading midi from {}", path);
             return this.loadMidi(() -> {
                 return new FileInputStream(path.toFile());
             }, (throwable) -> {
@@ -318,9 +324,9 @@ public class MidiManager {
             throw new InvalidIdentifierException("Invalid resource path: " + String.valueOf(id));
         } else {
             try {
-                Path path = this.generatedPath.resolve(id.getNamespace());
+                Path path = this.midisPath.resolve(id.getNamespace());
                 Path path2 = PathUtil.getResourcePath(path, id.getPath(), extension);
-                if (path2.startsWith(this.generatedPath) && PathUtil.isNormal(path2) && PathUtil.isAllowedName(path2)) {
+                if (path2.startsWith(this.midisPath) && PathUtil.isNormal(path2) && PathUtil.isAllowedName(path2)) {
                     return path2;
                 } else {
                     throw new InvalidIdentifierException("Invalid resource path: " + String.valueOf(path2));

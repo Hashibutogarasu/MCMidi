@@ -8,22 +8,20 @@ import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Optional;
-
-public record SequencePayload(NbtCompound nbt) implements CustomPayload {
+public record SequencePayload(NbtCompound nbt, byte[] bytes) implements CustomPayload {
     public static final Identifier IDENTIFIER = MCMidi.id("midi_packet");
     public static final CustomPayload.Id<SequencePayload> ID = new CustomPayload.Id<>(IDENTIFIER);
     public static PacketCodec<RegistryByteBuf, SequencePayload> CODEC = new PacketCodec<>() {
         public SequencePayload decode(RegistryByteBuf byteBuf) {
             NbtCompound nbt = PacketByteBuf.readNbt(byteBuf);
-            return new SequencePayload(nbt);
+            byte[] bytes = byteBuf.readByteArray();
+            return new SequencePayload(nbt, bytes);
         }
 
-        public void encode(RegistryByteBuf byteBuf, SequencePayload file) {
-            NbtCompound bytes = file.nbt();
-            PacketByteBuf.writeNbt(byteBuf, bytes);
+        public void encode(RegistryByteBuf byteBuf, SequencePayload payload) {
+            NbtCompound nbt = payload.nbt();
+            PacketByteBuf.writeNbt(byteBuf, nbt);
+            PacketByteBuf.writeByteArray(byteBuf, payload.bytes());
         }
     };
 

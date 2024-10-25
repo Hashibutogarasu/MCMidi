@@ -81,7 +81,7 @@ public class SoundFontManagerScreen extends GameOptionsScreen {
         if(selected != null){
             File file = new File("soundfont/" + selected.soundFont.path());
             if(!file.exists()){
-                LOGGER.error("Soundfont file does not exist: {}", selected.soundFont.path());
+                LOGGER.error("Soundfont file does not exist use default");
                 config.soundFontPath = "";
                 return;
             }
@@ -91,9 +91,7 @@ public class SoundFontManagerScreen extends GameOptionsScreen {
 
         AutoConfig.getConfigHolder(ModConfig.class).save();
 
-        if (this.client != null) {
-            this.client.setScreen(this.parent);
-        }
+        this.close();
     }
 
     public void openSoundFontDirectory() {
@@ -121,6 +119,11 @@ public class SoundFontManagerScreen extends GameOptionsScreen {
         }
 
         return soundfonts;
+    }
+
+    @Override
+    public boolean shouldPause() {
+        return true;
     }
 
     private class SoundFontOptionListWidget extends AlwaysSelectedEntryListWidget<SoundFontOptionListWidget.SoundFontEntry> {

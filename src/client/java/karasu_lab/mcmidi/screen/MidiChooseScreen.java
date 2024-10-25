@@ -15,6 +15,7 @@ import net.minecraft.client.gui.widget.DirectionalLayoutWidget;
 import net.minecraft.client.input.KeyCodes;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import org.apache.commons.io.monitor.FileAlterationListener;
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
@@ -24,13 +25,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 @Environment(EnvType.CLIENT)
 public class MidiChooseScreen extends GameOptionsScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MidiChooseScreen.class);
-    private static final String MIDI_DIRECTORY = "midi";
+    private static final String MIDI_DIRECTORY = "midi/mcmidi/midi";
     private static final String MIDI_EXTENTION = ".midi";
 
     private MidiListWidget midiFileListWidget;
@@ -72,25 +74,35 @@ public class MidiChooseScreen extends GameOptionsScreen {
         if(selected != null){
             File file = new File(MIDI_DIRECTORY + "/" + selected.path);
             try {
-                var currentMidi = MidiS2CPacket.getMidi();
-                if (currentMidi != null) {
-                    currentMidi.stop();
-                }
-                MidiS2CPacket.setMidi(new ExtendedMidi(file));
-                var extendedMidi = MidiS2CPacket.getMidi();
-                MidiS2CPacket.setPlayingPath(selected.path);
+                if(!file.exists()){
+                    LOGGER.info("File is not exists in: {}", file.getPath());
 
-                if (extendedMidi != null) {
-                    extendedMidi.play();
+                    return;
                 }
+
+                String path = file.getPath().replace("\\", "/");
+                try(FileInputStream stream = new FileInputStream(file)){
+                    ExtendedMidi current = ExtendedMidi.getCurrent();
+                    if(current != null){
+                        current.stop();
+                    }
+
+                    ExtendedMidi midi = new ExtendedMidi(stream.readAllBytes(), Identifier.of(path));
+                    midi.playAsync();
+                }
+                catch (Exception e){
+                    LOGGER.error("Failed to play midi file in MidiChooseScreen");
+                    LOGGER.error("Path: {}", path);
+                    LOGGER.error(e.getMessage());
+                }
+
+                MidiS2CPacket.setPlayingPath(selected.path);
             } catch (Exception ignored) {
 
             }
         }
 
-        if (this.client != null) {
-            this.client.setScreen(this.parent);
-        }
+        this.close();
     }
 
     public void openSoundFontDirectory() {

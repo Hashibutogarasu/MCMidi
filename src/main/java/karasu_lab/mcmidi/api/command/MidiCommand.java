@@ -72,7 +72,6 @@ public class MidiCommand {
     }
 
     private static int playMidiCommand(CommandContext<ServerCommandSource> context){
-        executeLoadCommand(context);
         String path = "";
         AtomicInteger loopCount = new AtomicInteger(0);
         AtomicInteger startTick = new AtomicInteger(0);
@@ -104,18 +103,16 @@ public class MidiCommand {
         Identifier id = MCMidi.id("midi/" + StringArgumentType.getString(context, "path"));
         String finalPath = path;
         MCMidi.midiManager.loadMidiFromFile(id).ifPresent(file -> {
-            List<Byte> byteList = new ArrayList<>();
+            byte[] bytes = new byte[0];
 
             try {
-                byte[] bytes = Files.readAllBytes(file.toPath());
-                List<Byte> data = Arrays.asList(new Byte[bytes.length]);
-                byteList.addAll(data);
+                bytes = Files.readAllBytes(file.toPath());;
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
             }
 
             NbtCompound nbt = new NbtCompound();
-            nbt.putByteArray("data", byteList);
+            nbt.putByteArray("data", bytes);
             nbt.putString("state", SequencePayload.MidiPlayerState.PLAYING.getName());
             nbt.putString("path", "midi/" + finalPath + ".midi");
             if(loopCount.get() > 0){
@@ -127,7 +124,7 @@ public class MidiCommand {
 
             for (ServerPlayerEntity target : targets) {
                 if(ServerPlayNetworking.canSend(target, SequencePayload.ID)){
-                    ServerPlayNetworking.send(target, new SequencePayload(nbt));
+                    ServerPlayNetworking.send(target, new SequencePayload(nbt, bytes));
                 }
             }
         });
@@ -159,7 +156,7 @@ public class MidiCommand {
         nbt.putString("state", SequencePayload.MidiPlayerState.STOPPING.getName());
 
         for (ServerPlayerEntity target : targets) {
-            ServerPlayNetworking.send(target, new SequencePayload(nbt));
+            ServerPlayNetworking.send(target, new SequencePayload(nbt, new byte[0]));
         }
 
         return 0;

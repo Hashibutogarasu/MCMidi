@@ -27,27 +27,9 @@ public class MidiControlCenter extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MidiControlCenter.class);
     private String playingPath = "";
     private ExtendedMidi midi;
-    private MidiInfo midiInfo;
     private final Screen parent;
 
     private static final Map<Integer, MidiNote> midiNoteMap = new HashMap<>();
-
-    private static final MyReciever receiver = new MyReciever((message) -> {
-        Screen currentScreen = MinecraftClient.getInstance().currentScreen;
-        if(currentScreen instanceof MidiControlCenter controlCenter){
-            controlCenter.onRecieve(message.getA());
-        }
-
-        return 0;
-    });
-
-    private void onRecieve(MidiMessage message) {
-        this.playingPath = MidiS2CPacket.getPlayingPath();
-        if(message instanceof ShortMessage shortMessage){
-            midiNoteMap.put(shortMessage.getChannel(), new MidiNote(shortMessage));
-            midiNoteMap.entrySet().stream().sorted(Map.Entry.comparingByKey());
-        }
-    }
 
     public MidiControlCenter(){
         this(MinecraftClient.getInstance().currentScreen);
@@ -66,7 +48,14 @@ public class MidiControlCenter extends Screen {
 
         if(extendedmidi != null){
             this.midi = extendedmidi;
-            this.midiInfo = extendedmidi.getMidiInfo();
+        }
+    }
+
+    public void onRecieve(MidiMessage message) {
+        this.playingPath = MidiS2CPacket.getPlayingPath();
+        if(message instanceof ShortMessage shortMessage){
+            midiNoteMap.put(shortMessage.getChannel(), new MidiNote(shortMessage));
+            midiNoteMap.entrySet().stream().sorted(Map.Entry.comparingByKey());
         }
     }
 
@@ -185,10 +174,6 @@ public class MidiControlCenter extends Screen {
         }
 
         return new Color(r, g, b);
-    }
-
-    public static MyReciever getReceiver(){
-        return receiver;
     }
 
     @Override
