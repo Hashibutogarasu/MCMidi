@@ -43,7 +43,7 @@ public class MidiControlCenter extends Screen {
     protected MidiControlCenter(Text title, Screen parent) {
         super(title);
         this.parent = parent;
-        ExtendedMidi extendedmidi = MidiS2CPacket.getMidi();
+        ExtendedMidi extendedmidi = ExtendedMidi.getCurrent();
 
         if(extendedmidi != null){
             this.midi = extendedmidi;
