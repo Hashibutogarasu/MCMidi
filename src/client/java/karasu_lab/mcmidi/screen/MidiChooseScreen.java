@@ -102,8 +102,6 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
                     LOGGER.error("Path: {}", path);
                     LOGGER.error(e.getMessage());
                 }
-
-                MidiS2CPacket.setPlayingPath(selected.path);
             } catch (Exception ignored) {
 
             }

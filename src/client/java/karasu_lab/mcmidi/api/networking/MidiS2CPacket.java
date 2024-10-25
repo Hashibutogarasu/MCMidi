@@ -12,7 +12,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 
 public class MidiS2CPacket {
-    private static String playingPath;
     private static ExtendedMidi midi;
 
     public static void recieve(SequencePayload payload, ClientPlayNetworking.Context context) {
@@ -52,8 +51,6 @@ public class MidiS2CPacket {
             return;
         }
 
-        playingPath = path;
-
         if(loopCount > 0){
             midi.setLoopCount(loopCount);
         }
@@ -67,24 +64,11 @@ public class MidiS2CPacket {
         MinecraftClient.getInstance().inGameHud.setRecordPlayingOverlay(Text.literal(path));
     }
 
-    public static String getPlayingPath() {
-        return playingPath;
-    }
-
-    public static void setPlayingPath(String path) {
-        playingPath = path;
-    }
 
 
     @Nullable
     public static ExtendedMidi getMidi() {
         return midi;
-    }
-
-    public static void clearMidi() {
-        midi.stop();
-        midi = null;
-        playingPath = null;
     }
 
     public static void setMidi(ExtendedMidi extendedMidi) {
