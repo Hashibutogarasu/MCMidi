@@ -11,9 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.sound.midi.*;
 import java.io.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 public class ExtendedMidi{
     private static final Logger LOGGER = LoggerFactory.getLogger(ExtendedMidi.class);

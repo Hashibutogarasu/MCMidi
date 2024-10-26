@@ -1,8 +1,6 @@
 package karasu_lab.mcmidi.screen;
 
 import karasu_lab.mcmidi.api.midi.ExtendedMidi;
-import karasu_lab.mcmidi.api.midi.MyReciever;
-import karasu_lab.mcmidi.api.networking.MidiS2CPacket;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -10,7 +8,6 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
-import org.chaiware.midi4j.MidiInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

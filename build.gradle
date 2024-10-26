@@ -57,8 +57,6 @@ dependencies {
 		exclude(group: "net.fabricmc.fabric-api")
 	}
 
-	implementation group: 'org.chaiware', name: 'midi4j', version: '1.0'
-	extraLibs group: 'org.chaiware', name: 'midi4j', version: '1.0'
 }
 
 processResources {
