@@ -28,4 +28,4 @@ This mod adds gameoptions screen likes this image.
 - .sf2
 
 ## Todos
-- Fix momentary drop in fps when play midi files.
+- [x] Fix momentary drop in fps when play midi files.
