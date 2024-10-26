@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Sequencer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MCMidiClient implements ClientModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger(MCMidiClient.class);

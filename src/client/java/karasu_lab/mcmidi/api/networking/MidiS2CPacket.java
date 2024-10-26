@@ -10,11 +10,30 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 public class MidiS2CPacket {
     private static ExtendedMidi midi;
 
+    private static final ExecutorService MIDI_PLAYER_POOL;
+
+    static {
+        final ThreadFactory threadFactory = r -> {
+            Thread thread = new Thread(r);
+            thread.setName("MidiPlayerThread");
+            return thread;
+        };
+
+        MIDI_PLAYER_POOL = Executors.newSingleThreadExecutor(threadFactory);
+    }
+
     public static void recieve(SequencePayload payload, ClientPlayNetworking.Context context) {
+        MIDI_PLAYER_POOL.submit(() -> recieveAsync(payload, context));
+    }
+
+    private static void recieveAsync(SequencePayload payload, ClientPlayNetworking.Context context) {
         NbtCompound nbt = payload.nbt();
 
         String path = nbt.getString("path");
@@ -40,7 +59,7 @@ public class MidiS2CPacket {
             if(current != null){
                 current.stop();
             }
-            midi = new ExtendedMidi(bytes, Identifier.of(path));
+            midi = new ExtendedMidi(bytes, Identifier.of(MCMidi.MOD_ID, path));
         } catch (Exception e) {
             if(current != null){
                 current.clear();
@@ -59,12 +78,10 @@ public class MidiS2CPacket {
             midi.setStartTick(startTick);
         }
 
-        midi.playAsync();
+        midi.play();
 
         MinecraftClient.getInstance().inGameHud.setRecordPlayingOverlay(Text.literal(path));
     }
-
-
 
     @Nullable
     public static ExtendedMidi getMidi() {

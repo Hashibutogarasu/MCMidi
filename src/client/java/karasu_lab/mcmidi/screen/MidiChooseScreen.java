@@ -24,6 +24,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 @Environment(EnvType.CLIENT)
 public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
@@ -32,6 +35,18 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
     private static final String MIDI_EXTENTION = ".midi";
 
     private MidiListWidget midiFileListWidget;
+
+    private static final ExecutorService MIDI_PLAYER_POOL;
+
+    static {
+        final ThreadFactory factory = r -> {
+            Thread thread = new Thread(r);
+            thread.setName("MidiPlayerThread");
+            return thread;
+        };
+
+        MIDI_PLAYER_POOL = Executors.newSingleThreadExecutor(factory);
+    }
 
     public MidiChooseScreen(Screen parent) {
         super(parent, MinecraftClient.getInstance().options, Text.translatable("mcmidi.options.title"));
@@ -55,7 +70,7 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
             this.openSoundFontDirectory();
         }).build());
         directionalLayoutWidget2.add(ButtonWidget.builder(ScreenTexts.DONE, (button) -> {
-            this.onDone();
+            MIDI_PLAYER_POOL.submit(this::onDone);
         }).build());
     }
 
@@ -95,7 +110,7 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
                     }
 
                     ExtendedMidi midi = new ExtendedMidi(stream.readAllBytes(), Identifier.of(path));
-                    midi.playAsync();
+                    midi.play();
                 }
                 catch (Exception e){
                     LOGGER.error("Failed to play midi file in MidiChooseScreen");
