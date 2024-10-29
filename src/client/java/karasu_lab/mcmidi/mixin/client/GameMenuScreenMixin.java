@@ -14,6 +14,8 @@ public abstract class GameMenuScreenMixin extends AbstractParentElement implemen
     @Inject(method = "disconnect", at = @At("RETURN"))
     private void close(CallbackInfo ci) {
         var current = ExtendedMidi.getCurrent();
-        current.stopCurrent();
+        if (current != null) {
+            current.stopCurrent();
+        }
     }
 }

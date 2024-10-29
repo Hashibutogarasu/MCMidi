@@ -6,6 +6,7 @@ import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +41,7 @@ public class ExtendedMidi{
         current = this;
     }
 
+    @Nullable
     public static ExtendedMidi getCurrent() {
         return current;
     }
