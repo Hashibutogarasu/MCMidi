@@ -45,8 +45,8 @@ public class ModLangProviders {
 
             translationBuilder.add("mcmidi.midi.channel", "Channel");
             translationBuilder.add("mcmidi.midi.status", "Status");
-            translationBuilder.add("mcmidi.midi.data1", "Data1");
-            translationBuilder.add("mcmidi.midi.data2", "Data2");
+            translationBuilder.add("mcmidi.midi.data1", "Octave");
+            translationBuilder.add("mcmidi.midi.data2", "Velocity");
 
             translationBuilder.add("category.mcmidi.keybinds", "MCMidi");
             translationBuilder.add("key.midi.open", "Open Midi Controll Center");

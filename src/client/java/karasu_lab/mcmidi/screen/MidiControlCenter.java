@@ -11,8 +11,7 @@ import net.minecraft.util.Colors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sound.midi.MidiMessage;
-import javax.sound.midi.ShortMessage;
+import javax.sound.midi.*;
 import java.awt.*;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -25,6 +24,11 @@ public class MidiControlCenter extends Screen {
     private final Screen parent;
 
     private static final Map<Integer, MidiNote> midiNoteMap = new HashMap<>();
+    private static final Map<Integer, Instrument> instrumentMap = new HashMap<>();
+
+    private Instrument[] instruments;
+
+    private static final String[] NOTE_NAMES = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 
     public MidiControlCenter(){
         this(MinecraftClient.getInstance().currentScreen);
@@ -42,8 +46,11 @@ public class MidiControlCenter extends Screen {
     }
 
     public void onRecieve(MidiMessage message) {
+        this.instruments = ExtendedMidi.getSynthesizer().getDefaultSoundbank().getInstruments();
+
         if(message instanceof ShortMessage shortMessage){
             midiNoteMap.put(shortMessage.getChannel(), new MidiNote(shortMessage));
+            instrumentMap.put(shortMessage.getChannel(), instruments[shortMessage.getChannel()]);
             midiNoteMap.entrySet().stream().sorted(Map.Entry.comparingByKey());
         }
     }
@@ -102,36 +109,54 @@ public class MidiControlCenter extends Screen {
         Text data2Text = Text.translatable("mcmidi.midi.data2");
         int data2TextWidth = this.textRenderer.getWidth(data2Text);
 
+        String pos = "0";
+        String bpm = "";
+
+        if(midi != null){
+            pos = String.format("%.2f", (float) midi.getPosition() / 1000);
+            bpm = String.format("%.2f", midi.getBPM());
+        }
+
+        Text postext = Text.literal("Posision: " + pos);
+        int posTextWidth = this.textRenderer.getWidth(postext);
+
+        Text bpmText = Text.literal("BPM: " + bpm);
+
         int offsetX1 = context.drawText(this.textRenderer, channelText, (this.width/ 2) - 200, offsetY.get(), 16777215, true);
-        int offsetX2 = context.drawText(this.textRenderer, statusText, offsetX1 + channelTextWidth + 10, offsetY.get(), 16777215, true);
-        int offsetX3 = context.drawText(this.textRenderer, data1Text, offsetX2 + statusTextWidth + 10, offsetY.get(), 16777215, true);
-        int offsetX4 = context.drawText(this.textRenderer, data2Text, offsetX3 + data1TextWidth + 10, offsetY.get(), 16777215, true);
+        int offsetX2 = context.drawText(this.textRenderer, statusText, offsetX1 + channelTextWidth, offsetY.get(), 16777215, true);
+        int offsetX3 = context.drawText(this.textRenderer, data1Text, offsetX2 + statusTextWidth, offsetY.get(), 16777215, true);
+        int offsetX4 = context.drawText(this.textRenderer, data2Text, offsetX3 + data1TextWidth, offsetY.get(), 16777215, true);
+        int offsetX5 = context.drawText(this.textRenderer, postext, offsetX4 + 10, offsetY.get(), 16777215, true);
+        int offsetX6 = context.drawText(this.textRenderer, bpmText, offsetX4 + 10, offsetY.get() + 10, 16777215, true);
 
         offsetY.set(offsetY.get() + 10);
         if(!midiNoteMap.isEmpty()){
             try{
                 midiNoteMap.forEach((integer, midiMessage) -> {
-                    String channelFormatted = String.format("%02d" , integer);
+                    String channelFormatted = String.format("%s" , instrumentMap.get(integer).getName());
                     String statusFormatted = String.format("%02d", midiMessage.getStatus());
 
-                    int data1 = midiMessage.getData1();
-                    int data2 = midiMessage.getData2();
+                    int key = midiMessage.getData1();
+                    int octave = (key / 12)-1;
+                    int note = key % 12;
+                    String noteName = NOTE_NAMES[note];
+                    int velocity = minorize(midiMessage.getData2());
 
-                    String data2Value = String.valueOf(data2);
-
-                    for (NoteStatus value : NoteStatus.values()) {
-                        if(value.condition.apply(data2)){
-                            data2Value = value.name;
-                        }
-                    }
-
-                    Text data1Styled = Text.literal(String.valueOf(data1)).setStyle(Style.EMPTY.withColor(getColor(data1).getRGB()));
-                    Text data2Styled = Text.literal(String.valueOf(data2Value)).setStyle(Style.EMPTY.withColor(getColor(data2).getRGB()));
+                    Text data1Styled = Text.literal(noteName + octave).setStyle(Style.EMPTY.withColor(getColor(noteName).getRGB()));
+                    Text data2Styled = Text.literal(String.valueOf(velocity));
+                    Text noteOffStyled = Text.literal("OFF").setStyle(Style.EMPTY.withColor(Colors.RED));
 
                     context.drawText(this.textRenderer, channelFormatted, offsetX1 - channelTextWidth, offsetY.get(), Colors.WHITE, true);
                     context.drawText(this.textRenderer, statusFormatted, offsetX2 - statusTextWidth, offsetY.get(), Colors.WHITE, true);
-                    context.drawText(this.textRenderer, data1Styled, offsetX3 - data1TextWidth, offsetY.get(), Colors.WHITE, true);
-                    context.drawText(this.textRenderer, data2Styled, offsetX4 - data2TextWidth, offsetY.get(), Colors.WHITE, true);
+
+                    if(midiMessage.getCommand() == ShortMessage.NOTE_ON){
+                        context.drawText(this.textRenderer, data1Styled, offsetX3 - data1TextWidth, offsetY.get(), Colors.WHITE, true);
+                        context.drawText(this.textRenderer, data2Styled, offsetX4 - data2TextWidth, offsetY.get(), Colors.WHITE, true);
+                    }
+                    else{
+                        context.drawText(this.textRenderer, noteOffStyled, offsetX3 - data1TextWidth, offsetY.get(), Colors.WHITE, true);
+                        context.drawText(this.textRenderer, noteOffStyled, offsetX4 - data2TextWidth, offsetY.get(), Colors.WHITE, true);
+                    }
 
                     offsetY.set(offsetY.get() + 10);
                 });
@@ -142,34 +167,31 @@ public class MidiControlCenter extends Screen {
         }
     }
 
-    private Color getColor(int a){
-        int r = 0, g = 0, b = 0;
+    private int minorize(int origin) {
+        int minorized = origin;
+        int note = (origin % 12);
+        if (note == 4 || note == 9 || note == 11) {
+            minorized--;
+        }
+        return minorized;
+    }
 
-        if (a >= 0 && a <= 30) {
-            r = 255;
-            g = (int) (255 * (a / 30.0));
-        } else if (a >= 31 && a <= 60) {
-            g = 255;
-            r = (int) (255 * ((60 - a) / 30.0));
-        } else if (a >= 61 && a <= 90) {
-            g = 255;
-            b = (int) (255 * ((a - 60) / 30.0));
-        } else if (a >= 91 && a <= 120) {
-            b = 255;
-            g = (int) (255 * ((120 - a) / 30.0));
-        }
-
-        if(r > 255){
-            r = 255;
-        }
-        if(g > 255){
-            g = 255;
-        }
-        if(b > 255){
-            b = 255;
-        }
-
-        return new Color(r, g, b);
+    private Color getColor(String data){
+        return switch (data) {
+            case "C" -> new Color(255,0,0);
+            case "C#" -> new Color(255,165,0);
+            case "D" -> new Color(255,255,0);
+            case "D#" -> new Color(0,255,0);
+            case "E" -> new Color(0,0,255);
+            case "F" -> new Color(75,0,130);
+            case "F#" -> new Color(238,130,238);
+            case "G" -> new Color(255,192,203);
+            case "G#" -> new Color(255,255,255);
+            case "A" -> new Color(211,211,211);
+            case "A#" -> new Color(128,128,128);
+            case "B" -> new Color(0,0,0);
+            default -> Color.WHITE;
+        };
     }
 
     @Override
