@@ -41,6 +41,7 @@ public class ExtendedMidi{
     }
 
     public static ExtendedMidi getCurrent() {
+        assert current != null;
         return current;
     }
 
