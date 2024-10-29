@@ -48,6 +48,10 @@ public class ExtendedMidi{
         return identifier;
     }
 
+    public static Synthesizer getSynthesizer(){
+        return current.synthesizer;
+    }
+
     public void saveToLocal(byte[] bytes, String path){
         if(bytes == null || bytes.length == 0){
             return;
@@ -131,6 +135,10 @@ public class ExtendedMidi{
         var current = ExtendedMidi.getCurrent();
         if(current != null){
             current.position = current.sequencer.getTickPosition();
+
+            if(current.position == current.sequencer.getTickPosition()){
+
+            }
         }
     }
 
@@ -183,7 +191,7 @@ public class ExtendedMidi{
     }
 
     public boolean isPlaying(){
-        return this.sequencer.isRunning();
+        return this.sequencer.isOpen();
     }
 
     public Text getPlayingPath() {
@@ -195,5 +203,9 @@ public class ExtendedMidi{
 
     public byte[] getBytes() {
         return this.bytes;
+    }
+
+    public float getBPM(){
+        return this.sequencer.getTempoInBPM();
     }
 }

@@ -35,7 +35,7 @@ public abstract class ScreenMixin {
     @Inject(method = "close", at = @At("RETURN"))
     public void close(CallbackInfo ci){
         if(shouldPause()){
-            if(this.current != null){
+            if(this.current != null && this.current.isPlaying()){
                 this.current.play();
                 this.current.setPosition(this.position);
             }
