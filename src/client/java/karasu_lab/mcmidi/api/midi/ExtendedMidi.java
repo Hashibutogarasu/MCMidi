@@ -43,6 +43,7 @@ public class ExtendedMidi{
 
     @Nullable
     public static ExtendedMidi getCurrent() {
+        assert current != null;
         return current;
     }
 
