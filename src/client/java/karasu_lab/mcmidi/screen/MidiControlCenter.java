@@ -28,14 +28,14 @@ public class MidiControlCenter extends Screen {
 
     private Instrument[] instruments;
 
-    private static final String[] NOTE_NAMES = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+    private static final String[] NOTE_NAMES = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
-    public MidiControlCenter(){
+    public MidiControlCenter() {
         this(MinecraftClient.getInstance().currentScreen);
         midiNoteMap.clear();
     }
 
-    public MidiControlCenter(Screen parent){
+    public MidiControlCenter(Screen parent) {
         this(Text.translatable("mcmidi.midi_control_center"), parent);
         midiNoteMap.clear();
     }
@@ -45,10 +45,35 @@ public class MidiControlCenter extends Screen {
         this.parent = parent;
     }
 
+    private void loadAllInstruments() {
+        try {
+            ExtendedMidi current = ExtendedMidi.getCurrent();
+            if (current != null) {
+                Synthesizer synthesizer = ExtendedMidi.getSynthesizer();
+                if (synthesizer != null) {
+                    this.instruments = synthesizer.getDefaultSoundbank().getInstruments();
+
+                    if (this.instruments != null) {
+                        LOGGER.info("Loading all instruments: {}", this.instruments.length);
+                        for (int i = 0; i < this.instruments.length && i < 16; i++) {
+
+                            if (this.instruments[i] != null) {
+                                instrumentMap.put(i, this.instruments[i]);
+                                LOGGER.info("Loaded instrument {} for channel {}", this.instruments[i].getName(), i);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to load instruments", e);
+        }
+    }
+
     public void onRecieve(MidiMessage message) {
         this.instruments = ExtendedMidi.getSynthesizer().getDefaultSoundbank().getInstruments();
 
-        if(message instanceof ShortMessage shortMessage){
+        if (message instanceof ShortMessage shortMessage) {
             midiNoteMap.put(shortMessage.getChannel(), new MidiNote(shortMessage));
             instrumentMap.put(shortMessage.getChannel(), instruments[shortMessage.getChannel()]);
             midiNoteMap.entrySet().stream().sorted(Map.Entry.comparingByKey());
@@ -57,25 +82,31 @@ public class MidiControlCenter extends Screen {
 
     @Override
     protected void init() {
+
+        loadAllInstruments();
+
         super.init();
 
-        addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_soundfont_files"), button -> {
-            if (this.client != null) {
-                this.client.setScreen(new SoundFontManagerScreen(this));
-            }
-        }).dimensions((this.width / 2) - 205, this.height - 25, 90, 20).build());
+        addDrawableChild(
+                ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_soundfont_files"), button -> {
+                    if (this.client != null) {
+                        this.client.setScreen(new SoundFontManagerScreen(this));
+                    }
+                }).dimensions((this.width / 2) - 205, this.height - 25, 90, 20).build());
 
-        addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_midi_files"), button -> {
-            if (this.client != null) {
-                this.client.setScreen(new MidiChooseScreen(this));
-            }
-        }).dimensions((this.width / 2) - 110, this.height - 25, 90, 20).build());
+        addDrawableChild(
+                ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_midi_files"), button -> {
+                    if (this.client != null) {
+                        this.client.setScreen(new MidiChooseScreen(this));
+                    }
+                }).dimensions((this.width / 2) - 110, this.height - 25, 90, 20).build());
 
-        addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_sound_controller"), button -> {
-            if (this.client != null) {
-                this.client.setScreen(new SoundControllerScreen(this));
-            }
-        }).dimensions((this.width / 2) - 15, this.height - 25, 90, 20).build());
+        addDrawableChild(
+                ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.open_sound_controller"), button -> {
+                    if (this.client != null) {
+                        this.client.setScreen(new SoundControllerScreen(this));
+                    }
+                }).dimensions((this.width / 2) - 15, this.height - 25, 90, 20).build());
 
         addDrawableChild(ButtonWidget.builder(Text.translatable("mcmidi.midi_control_center.close"), button -> {
             this.close();
@@ -88,11 +119,11 @@ public class MidiControlCenter extends Screen {
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 6, 16777215);
 
         ExtendedMidi midi = ExtendedMidi.getCurrent();
-        if(midi != null){
+        if (midi != null) {
             context.drawCenteredTextWithShadow(this.textRenderer, midi.getPlayingPath(), this.width / 2, 16, 16777215);
-        }
-        else {
-            context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("mcmidi.text.no_midi"), this.width / 2, 16, 16777215);
+        } else {
+            context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("mcmidi.text.no_midi"),
+                    this.width / 2, 16, 16777215);
         }
 
         AtomicInteger offsetY = new AtomicInteger(30);
@@ -112,7 +143,7 @@ public class MidiControlCenter extends Screen {
         String pos = "0";
         String bpm = "";
 
-        if(midi != null){
+        if (midi != null) {
             pos = String.format("%.2f", (float) midi.getPosition() / 1000);
             bpm = String.format("%.2f", midi.getBPM());
         }
@@ -121,47 +152,60 @@ public class MidiControlCenter extends Screen {
         int posTextWidth = this.textRenderer.getWidth(postext);
 
         Text bpmText = Text.literal("BPM: " + bpm);
-
-        int offsetX1 = context.drawText(this.textRenderer, channelText, (this.width/ 2) - 200, offsetY.get(), 16777215, true);
-        int offsetX2 = context.drawText(this.textRenderer, statusText, offsetX1 + channelTextWidth, offsetY.get(), 16777215, true);
-        int offsetX3 = context.drawText(this.textRenderer, data1Text, offsetX2 + statusTextWidth, offsetY.get(), 16777215, true);
-        int offsetX4 = context.drawText(this.textRenderer, data2Text, offsetX3 + data1TextWidth, offsetY.get(), 16777215, true);
+        int offsetX1 = context.drawText(this.textRenderer, channelText, (this.width / 2) - 200, offsetY.get(), 16777215,
+                true);
+        int offsetX2 = context.drawText(this.textRenderer, statusText, offsetX1 + channelTextWidth + 10, offsetY.get(),
+                16777215, true);
+        int offsetX3 = context.drawText(this.textRenderer, data1Text, offsetX2 + statusTextWidth + 10, offsetY.get(),
+                16777215, true);
+        int offsetX4 = context.drawText(this.textRenderer, data2Text, offsetX3 + data1TextWidth + 10, offsetY.get(),
+                16777215, true);
         int offsetX5 = context.drawText(this.textRenderer, postext, offsetX4 + 10, offsetY.get(), 16777215, true);
         int offsetX6 = context.drawText(this.textRenderer, bpmText, offsetX4 + 10, offsetY.get() + 10, 16777215, true);
-
         offsetY.set(offsetY.get() + 10);
-        if(!midiNoteMap.isEmpty()){
-            try{
-                midiNoteMap.forEach((integer, midiMessage) -> {
-                    String channelFormatted = String.format("%s" , instrumentMap.get(integer).getName());
-                    String statusFormatted = String.format("%02d", midiMessage.getStatus());
+        if (!instrumentMap.isEmpty()) {
+            try {
+                instrumentMap.forEach((integer, instrument) -> {
+                    if (instrument != null) {
+                        String channelFormatted = String.format("Ch%d: %s", integer, instrument.getName());
 
-                    int key = midiMessage.getData1();
-                    int octave = (key / 12)-1;
-                    int note = key % 12;
-                    String noteName = NOTE_NAMES[note];
-                    int velocity = minorize(midiMessage.getData2());
+                        MidiNote midiNote = midiNoteMap.get(integer);
+                        String statusFormatted = "-";
+                        Text data1Styled = Text.literal("-");
+                        Text data2Styled = Text.literal("-");
 
-                    Text data1Styled = Text.literal(noteName + octave).setStyle(Style.EMPTY.withColor(getColor(noteName).getRGB()));
-                    Text data2Styled = Text.literal(String.valueOf(velocity));
-                    Text noteOffStyled = Text.literal("OFF").setStyle(Style.EMPTY.withColor(Colors.RED));
+                        if (midiNote != null) {
+                            statusFormatted = String.format("%02d", midiNote.getStatus());
 
-                    context.drawText(this.textRenderer, channelFormatted, offsetX1 - channelTextWidth, offsetY.get(), Colors.WHITE, true);
-                    context.drawText(this.textRenderer, statusFormatted, offsetX2 - statusTextWidth, offsetY.get(), Colors.WHITE, true);
+                            if (midiNote.getCommand() == ShortMessage.NOTE_ON) {
+                                int key = midiNote.getData1();
+                                int octave = (key / 12) - 1;
+                                int note = key % 12;
+                                String noteName = NOTE_NAMES[note];
+                                int velocity = minorize(midiNote.getData2());
 
-                    if(midiMessage.getCommand() == ShortMessage.NOTE_ON){
-                        context.drawText(this.textRenderer, data1Styled, offsetX3 - data1TextWidth, offsetY.get(), Colors.WHITE, true);
-                        context.drawText(this.textRenderer, data2Styled, offsetX4 - data2TextWidth, offsetY.get(), Colors.WHITE, true);
+                                data1Styled = Text.literal(noteName + octave)
+                                        .setStyle(Style.EMPTY.withColor(getColor(noteName).getRGB()));
+                                data2Styled = Text.literal(String.valueOf(velocity));
+                            } else if (midiNote.getCommand() == ShortMessage.NOTE_OFF) {
+                                data1Styled = Text.literal("OFF").setStyle(Style.EMPTY.withColor(Colors.RED));
+                                data2Styled = Text.literal("0");
+                            }
+                        }
+                        context.drawText(this.textRenderer, channelFormatted, offsetX1 - channelTextWidth,
+                                offsetY.get(), Colors.WHITE, true);
+                        context.drawText(this.textRenderer, statusFormatted, offsetX2 - statusTextWidth + 10,
+                                offsetY.get(),
+                                Colors.WHITE, true);
+                        context.drawText(this.textRenderer, data1Styled, offsetX3 - data1TextWidth + 10, offsetY.get(),
+                                Colors.WHITE, true);
+                        context.drawText(this.textRenderer, data2Styled, offsetX4 - data2TextWidth + 10, offsetY.get(),
+                                Colors.WHITE, true);
+
+                        offsetY.set(offsetY.get() + 10);
                     }
-                    else{
-                        context.drawText(this.textRenderer, noteOffStyled, offsetX3 - data1TextWidth, offsetY.get(), Colors.WHITE, true);
-                        context.drawText(this.textRenderer, noteOffStyled, offsetX4 - data2TextWidth, offsetY.get(), Colors.WHITE, true);
-                    }
-
-                    offsetY.set(offsetY.get() + 10);
                 });
-            }
-            catch (ConcurrentModificationException ignored){
+            } catch (ConcurrentModificationException ignored) {
 
             }
         }
@@ -176,20 +220,20 @@ public class MidiControlCenter extends Screen {
         return minorized;
     }
 
-    private Color getColor(String data){
+    private Color getColor(String data) {
         return switch (data) {
-            case "C" -> new Color(255,0,0);
-            case "C#" -> new Color(255,165,0);
-            case "D" -> new Color(255,255,0);
-            case "D#" -> new Color(0,255,0);
-            case "E" -> new Color(0,0,255);
-            case "F" -> new Color(75,0,130);
-            case "F#" -> new Color(238,130,238);
-            case "G" -> new Color(255,192,203);
-            case "G#" -> new Color(255,255,255);
-            case "A" -> new Color(211,211,211);
-            case "A#" -> new Color(128,128,128);
-            case "B" -> new Color(0,0,0);
+            case "C" -> new Color(255, 0, 0);
+            case "C#" -> new Color(255, 165, 0);
+            case "D" -> new Color(255, 255, 0);
+            case "D#" -> new Color(0, 255, 0);
+            case "E" -> new Color(0, 0, 255);
+            case "F" -> new Color(75, 0, 130);
+            case "F#" -> new Color(238, 130, 238);
+            case "G" -> new Color(255, 192, 203);
+            case "G#" -> new Color(255, 255, 255);
+            case "A" -> new Color(211, 211, 211);
+            case "A#" -> new Color(128, 128, 128);
+            case "B" -> new Color(0, 0, 0);
             default -> Color.WHITE;
         };
     }
@@ -202,7 +246,7 @@ public class MidiControlCenter extends Screen {
     @Override
     public void close() {
         ExtendedMidi midi = ExtendedMidi.getCurrent();
-        if(this.parent != null && midi != null){
+        if (this.parent != null && midi != null) {
             if (this.client != null) {
                 super.close();
                 this.client.setScreen(this);
@@ -213,7 +257,7 @@ public class MidiControlCenter extends Screen {
         super.close();
     }
 
-    private enum NoteStatus{
+    private enum NoteStatus {
         ON(integer -> integer == 32 || integer == 100, "ON"),
         OFF(integer -> integer == 0, "OFF"),
         NONE(integer -> integer == 64, "NONE"),
@@ -223,34 +267,34 @@ public class MidiControlCenter extends Screen {
         private final Function<Integer, Boolean> condition;
         private final String name;
 
-        NoteStatus(Function<Integer, Boolean> condition, String name){
+        NoteStatus(Function<Integer, Boolean> condition, String name) {
             this.condition = condition;
             this.name = name;
         }
     }
 
     private record MidiNote(ShortMessage shortMessage) {
-        public int getChennel(){
+        public int getChennel() {
             return shortMessage.getChannel();
         }
 
-        public int getStatus(){
+        public int getStatus() {
             return shortMessage.getStatus();
         }
 
-        public int getCommand(){
+        public int getCommand() {
             return shortMessage.getCommand();
         }
 
-        public byte[] getMessage(){
+        public byte[] getMessage() {
             return shortMessage.getMessage();
         }
 
-        public int getData1(){
+        public int getData1() {
             return shortMessage.getData1();
         }
 
-        public int getData2(){
+        public int getData2() {
             return shortMessage.getData2();
         }
     }

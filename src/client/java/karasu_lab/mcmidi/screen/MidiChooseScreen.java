@@ -1,7 +1,6 @@
 package karasu_lab.mcmidi.screen;
 
 import karasu_lab.mcmidi.api.midi.ExtendedMidi;
-import karasu_lab.mcmidi.api.networking.MidiS2CPacket;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;

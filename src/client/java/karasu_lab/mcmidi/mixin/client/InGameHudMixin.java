@@ -1,7 +1,6 @@
 package karasu_lab.mcmidi.mixin.client;
 
 import karasu_lab.mcmidi.api.midi.ExtendedMidi;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.render.RenderTickCounter;

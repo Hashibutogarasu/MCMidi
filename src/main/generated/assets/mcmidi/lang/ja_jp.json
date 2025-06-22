@@ -1,1 +1,27 @@
-{}
+{
+    "category.mcmidi.keybinds": "MCMidi",
+    "key.midi.open": "MIDIコントロールセンターを開く",
+    "mcmidi.midi.channel": "チャンネル",
+    "mcmidi.midi.data1": "オクターブ",
+    "mcmidi.midi.data2": "ベロシティ",
+    "mcmidi.midi.status": "ステータス",
+    "mcmidi.midi_control_center": "MIDIコントロールセンター",
+    "mcmidi.midi_control_center.close": "閉じる",
+    "mcmidi.midi_control_center.open_midi_files": "MIDI",
+    "mcmidi.midi_control_center.open_sound_controller": "サウンドコントローラー",
+    "mcmidi.midi_control_center.open_soundfont_files": "サウンドフォント",
+    "mcmidi.midi_sound_controller": "MIDIサウンドコントローラー",
+    "mcmidi.options.title": "MCMidi設定",
+    "mcmidi.sound_controller.play": "再生",
+    "mcmidi.sound_controller.pause": "一時停止",
+    "mcmidi.sound_controller.stop": "停止",
+    "mcmidi.sound_controller.now_playing": "再生中:",
+    "mcmidi.sound_controller.no_midi": "MIDIが選択されていません",
+    "mcmidi.sound_controller.state.playing": "再生中",
+    "mcmidi.sound_controller.state.paused": "一時停止中",
+    "mcmidi.text.no_midi": "MIDIは再生されていません",
+    "text.autoconfig.mcmidi.option.midiVolume": "MIDI音量",
+    "text.autoconfig.mcmidi.title": "MCMidi",
+    "text.mcmidi.openmididirectory": "MIDIディレクトリを開く",
+    "text.mcmidi.opensoundfontdirectory": "サウンドフォントディレクトリを開く"
+}
