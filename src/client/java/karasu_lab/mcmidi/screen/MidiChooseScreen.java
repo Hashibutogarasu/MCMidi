@@ -28,10 +28,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 @Environment(EnvType.CLIENT)
-public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
+public class MidiChooseScreen extends GameOptionsScreen implements IScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MidiChooseScreen.class);
     private static final String MIDI_DIRECTORY = "midi/mcmidi/midi";
-    private static final String MIDI_EXTENTION = ".midi";
+    private static final String[] MIDI_EXTENTIONS = { ".midi", ".mid" };
 
     private MidiListWidget midiFileListWidget;
 
@@ -52,22 +52,25 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
         this.layout.setFooterHeight(53);
         ExtendedMidi current = ExtendedMidi.getCurrent();
 
-        if(current != null){
+        if (current != null) {
             current.stop();
             current.clear();
         }
     }
 
-    protected void initBody(){
+    protected void initBody() {
         this.midiFileListWidget = this.layout.addBody(new MidiListWidget(this.client));
     }
 
-    protected void initFooter(){
-        DirectionalLayoutWidget directionalLayoutWidget = (this.layout.addFooter(DirectionalLayoutWidget.vertical())).spacing(8);
-        DirectionalLayoutWidget directionalLayoutWidget2 = directionalLayoutWidget.add(DirectionalLayoutWidget.horizontal().spacing(8));
-        directionalLayoutWidget2.add(ButtonWidget.builder(Text.translatable("text.mcmidi.openmididirectory"), (button) -> {
-            this.openSoundFontDirectory();
-        }).build());
+    protected void initFooter() {
+        DirectionalLayoutWidget directionalLayoutWidget = (this.layout.addFooter(DirectionalLayoutWidget.vertical()))
+                .spacing(8);
+        DirectionalLayoutWidget directionalLayoutWidget2 = directionalLayoutWidget
+                .add(DirectionalLayoutWidget.horizontal().spacing(8));
+        directionalLayoutWidget2
+                .add(ButtonWidget.builder(Text.translatable("text.mcmidi.openmididirectory"), (button) -> {
+                    this.openSoundFontDirectory();
+                }).build());
         directionalLayoutWidget2.add(ButtonWidget.builder(ScreenTexts.DONE, (button) -> {
             MIDI_PLAYER_POOL.submit(this::onDone);
         }).build());
@@ -89,29 +92,28 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
         super.close();
     }
 
-    private void onDone(){
+    private void onDone() {
         MidiListWidget.MidiEntry selected = this.midiFileListWidget.getSelectedOrNull();
 
-        if(selected != null){
+        if (selected != null) {
             File file = new File(MIDI_DIRECTORY + "/" + selected.path);
             try {
-                if(!file.exists()){
+                if (!file.exists()) {
                     LOGGER.info("File is not exists in: {}", file.getPath());
 
                     return;
                 }
 
                 String path = file.getPath().replace("\\", "/");
-                try(FileInputStream stream = new FileInputStream(file)){
+                try (FileInputStream stream = new FileInputStream(file)) {
                     ExtendedMidi current = ExtendedMidi.getCurrent();
-                    if(current != null){
+                    if (current != null) {
                         current.stop();
                     }
 
                     ExtendedMidi midi = new ExtendedMidi(stream.readAllBytes(), Identifier.of(path));
                     midi.play();
-                }
-                catch (Exception e){
+                } catch (Exception e) {
                     LOGGER.error("Failed to play midi file in MidiChooseScreen");
                     LOGGER.error("Path: {}", path);
                     LOGGER.error(e.getMessage());
@@ -141,8 +143,15 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
         }
 
         List<String> soundfonts = new ArrayList<>();
-        var listfiles = file.listFiles((dir, name) -> name.endsWith(MIDI_EXTENTION));
-        if(listfiles != null){
+        var listfiles = file.listFiles((dir, name) -> {
+            for (String ext : MIDI_EXTENTIONS) {
+                if (name.endsWith(ext)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+        if (listfiles != null) {
             for (File listFile : listfiles) {
                 soundfonts.add(listFile.getName());
             }
@@ -168,11 +177,11 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
             }
         }
 
-        public void addSoundFontEntry(String path){
+        public void addSoundFontEntry(String path) {
             addEntry(new MidiEntry(path));
         }
 
-        public void clearSoundFontEntries(){
+        public void clearSoundFontEntries() {
             clearEntries();
         }
 
@@ -180,7 +189,7 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
             return super.getRowWidth() + 50;
         }
 
-        public class MidiEntry extends AlwaysSelectedEntryListWidget.Entry<MidiEntry>{
+        public class MidiEntry extends AlwaysSelectedEntryListWidget.Entry<MidiEntry> {
             private final String path;
             private long clickTime;
 
@@ -194,7 +203,8 @@ public class MidiChooseScreen extends GameOptionsScreen implements IScreen{
             }
 
             @Override
-            public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight,
+                    int mouseX, int mouseY, boolean hovered, float tickDelta) {
                 TextRenderer textRenderer = MidiChooseScreen.this.textRenderer;
                 Text midifilepath = Text.literal(this.path);
                 int width = MidiListWidget.this.width / 2;

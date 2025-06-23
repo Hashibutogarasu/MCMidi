@@ -30,6 +30,8 @@ public class MidiControlCenter extends Screen {
 
     private static final String[] NOTE_NAMES = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
+    private int maxInstrumentNameWidth = 0;
+
     public MidiControlCenter() {
         this(MinecraftClient.getInstance().currentScreen);
         midiNoteMap.clear();
@@ -60,6 +62,14 @@ public class MidiControlCenter extends Screen {
                             if (this.instruments[i] != null) {
                                 instrumentMap.put(i, this.instruments[i]);
                                 LOGGER.info("Loaded instrument {} for channel {}", this.instruments[i].getName(), i);
+
+                                String channelFormatted = String.format("Ch%d: %s", i, this.instruments[i].getName());
+                                int width = this.textRenderer != null ? this.textRenderer.getWidth(channelFormatted)
+                                        : channelFormatted.length() * 6;
+
+                                if (width > maxInstrumentNameWidth) {
+                                    maxInstrumentNameWidth = width;
+                                }
                             }
                         }
                     }
@@ -75,7 +85,21 @@ public class MidiControlCenter extends Screen {
 
         if (message instanceof ShortMessage shortMessage) {
             midiNoteMap.put(shortMessage.getChannel(), new MidiNote(shortMessage));
-            instrumentMap.put(shortMessage.getChannel(), instruments[shortMessage.getChannel()]);
+
+            int channel = shortMessage.getChannel();
+            if (instruments != null && channel < instruments.length && instruments[channel] != null) {
+                Instrument instrument = instruments[channel];
+                instrumentMap.put(channel, instrument);
+
+                String channelFormatted = String.format("Ch%d: %s", channel, instrument.getName());
+                int width = this.textRenderer != null ? this.textRenderer.getWidth(channelFormatted)
+                        : channelFormatted.length() * 6;
+
+                if (width > maxInstrumentNameWidth) {
+                    maxInstrumentNameWidth = width;
+                }
+            }
+
             midiNoteMap.entrySet().stream().sorted(Map.Entry.comparingByKey());
         }
     }
@@ -148,20 +172,30 @@ public class MidiControlCenter extends Screen {
             bpm = String.format("%.2f", midi.getBPM());
         }
 
+        float leftMarginRatio = 0.15f;
+        float columnSpacingRatio = 0.05f;
+
+        int leftMargin = (int) (this.width * leftMarginRatio);
+        int columnSpacing = (int) (this.width * columnSpacingRatio);
+
         Text postext = Text.literal("Posision: " + pos);
-        int posTextWidth = this.textRenderer.getWidth(postext);
 
         Text bpmText = Text.literal("BPM: " + bpm);
-        int offsetX1 = context.drawText(this.textRenderer, channelText, (this.width / 2) - 200, offsetY.get(), 16777215,
-                true);
-        int offsetX2 = context.drawText(this.textRenderer, statusText, offsetX1 + channelTextWidth + 10, offsetY.get(),
-                16777215, true);
-        int offsetX3 = context.drawText(this.textRenderer, data1Text, offsetX2 + statusTextWidth + 10, offsetY.get(),
-                16777215, true);
-        int offsetX4 = context.drawText(this.textRenderer, data2Text, offsetX3 + data1TextWidth + 10, offsetY.get(),
-                16777215, true);
-        int offsetX5 = context.drawText(this.textRenderer, postext, offsetX4 + 10, offsetY.get(), 16777215, true);
-        int offsetX6 = context.drawText(this.textRenderer, bpmText, offsetX4 + 10, offsetY.get() + 10, 16777215, true);
+
+        int channelColumnWidth = Math.max(maxInstrumentNameWidth, channelTextWidth);
+
+        int column1X = leftMargin;
+        int column2X = column1X + channelColumnWidth + columnSpacing;
+        int column3X = column2X + statusTextWidth + columnSpacing;
+        int column4X = column3X + data1TextWidth + columnSpacing;
+        int infoX = column4X + data2TextWidth + columnSpacing;
+
+        context.drawText(this.textRenderer, channelText, column1X, offsetY.get(), 16777215, true);
+        context.drawText(this.textRenderer, statusText, column2X, offsetY.get(), 16777215, true);
+        context.drawText(this.textRenderer, data1Text, column3X, offsetY.get(), 16777215, true);
+        context.drawText(this.textRenderer, data2Text, column4X, offsetY.get(), 16777215, true);
+        context.drawText(this.textRenderer, postext, infoX, offsetY.get(), 16777215, true);
+        context.drawText(this.textRenderer, bpmText, infoX, offsetY.get() + 10, 16777215, true);
         offsetY.set(offsetY.get() + 10);
         if (!instrumentMap.isEmpty()) {
             try {
@@ -192,14 +226,15 @@ public class MidiControlCenter extends Screen {
                                 data2Styled = Text.literal("0");
                             }
                         }
-                        context.drawText(this.textRenderer, channelFormatted, offsetX1 - channelTextWidth,
+
+                        context.drawText(this.textRenderer, channelFormatted, column1X,
                                 offsetY.get(), Colors.WHITE, true);
-                        context.drawText(this.textRenderer, statusFormatted, offsetX2 - statusTextWidth + 10,
+                        context.drawText(this.textRenderer, statusFormatted, column2X,
                                 offsetY.get(),
                                 Colors.WHITE, true);
-                        context.drawText(this.textRenderer, data1Styled, offsetX3 - data1TextWidth + 10, offsetY.get(),
+                        context.drawText(this.textRenderer, data1Styled, column3X, offsetY.get(),
                                 Colors.WHITE, true);
-                        context.drawText(this.textRenderer, data2Styled, offsetX4 - data2TextWidth + 10, offsetY.get(),
+                        context.drawText(this.textRenderer, data2Styled, column4X, offsetY.get(),
                                 Colors.WHITE, true);
 
                         offsetY.set(offsetY.get() + 10);
