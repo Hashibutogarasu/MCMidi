@@ -29,7 +29,7 @@ import java.util.List;
 @Environment(EnvType.CLIENT)
 public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(SoundFontManagerScreen.class);
-    private static final String SOUNDFONT_DIRECTORY = "soundfont";
+    private static final String SOUNDFONT_DIRECTORY = "midi/soundfonts";
     private static final String SOUNDFONT_EXTENTION = ".sf2";
 
     private SoundFontOptionListWidget soundFontOptionListWidget;
@@ -46,22 +46,25 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
 
         ExtendedMidi current = ExtendedMidi.getCurrent();
 
-        if(current != null){
+        if (current != null) {
             current.stop();
             current.clear();
         }
     }
 
-    protected void initBody(){
+    protected void initBody() {
         this.soundFontOptionListWidget = this.layout.addBody(new SoundFontOptionListWidget(this.client));
     }
 
-    protected void initFooter(){
-        DirectionalLayoutWidget directionalLayoutWidget = (this.layout.addFooter(DirectionalLayoutWidget.vertical())).spacing(8);
-        DirectionalLayoutWidget directionalLayoutWidget2 = directionalLayoutWidget.add(DirectionalLayoutWidget.horizontal().spacing(8));
-        directionalLayoutWidget2.add(ButtonWidget.builder(Text.translatable("text.mcmidi.opensoundfontdirectory"), (button) -> {
-            this.openSoundFontDirectory();
-        }).build());
+    protected void initFooter() {
+        DirectionalLayoutWidget directionalLayoutWidget = (this.layout.addFooter(DirectionalLayoutWidget.vertical()))
+                .spacing(8);
+        DirectionalLayoutWidget directionalLayoutWidget2 = directionalLayoutWidget
+                .add(DirectionalLayoutWidget.horizontal().spacing(8));
+        directionalLayoutWidget2
+                .add(ButtonWidget.builder(Text.translatable("text.mcmidi.opensoundfontdirectory"), (button) -> {
+                    this.openSoundFontDirectory();
+                }).build());
         directionalLayoutWidget2.add(ButtonWidget.builder(ScreenTexts.DONE, (button) -> {
             this.onDone();
         }).build());
@@ -78,12 +81,12 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
 
     }
 
-    private void onDone(){
+    private void onDone() {
         SoundFontOptionListWidget.SoundFontEntry selected = this.soundFontOptionListWidget.getSelectedOrNull();
 
-        if(selected != null){
+        if (selected != null) {
             File file = new File("soundfont/" + selected.soundFont.path());
-            if(!file.exists()){
+            if (!file.exists()) {
                 LOGGER.error("Soundfont file does not exist use default");
                 config.soundFontPath = "";
                 return;
@@ -120,7 +123,7 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
 
         List<String> soundfonts = new ArrayList<>();
         var listfiles = file.listFiles((dir, name) -> name.endsWith(SOUNDFONT_EXTENTION));
-        if(listfiles != null){
+        if (listfiles != null) {
             for (File listFile : listfiles) {
                 soundfonts.add(listFile.getName());
             }
@@ -134,9 +137,11 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
         return true;
     }
 
-    private class SoundFontOptionListWidget extends AlwaysSelectedEntryListWidget<SoundFontOptionListWidget.SoundFontEntry> {
+    private class SoundFontOptionListWidget
+            extends AlwaysSelectedEntryListWidget<SoundFontOptionListWidget.SoundFontEntry> {
         public SoundFontOptionListWidget(MinecraftClient minecraftClient) {
-            super(minecraftClient, SoundFontManagerScreen.this.width, SoundFontManagerScreen.this.height - 33 - 53, 33, 18);
+            super(minecraftClient, SoundFontManagerScreen.this.width, SoundFontManagerScreen.this.height - 33 - 53, 33,
+                    18);
 
             List<String> soundfonts = SoundFontManagerScreen.this.getLocalSoundFonts();
 
@@ -154,11 +159,11 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
             }
         }
 
-        public void addSoundFontEntry(String path){
+        public void addSoundFontEntry(String path) {
             addEntry(new SoundFontEntry(new SoundFontManager.SoundFont(path)));
         }
 
-        public void clearSoundFontEntries(){
+        public void clearSoundFontEntries() {
             clearEntries();
         }
 
@@ -166,7 +171,7 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
             return super.getRowWidth() + 50;
         }
 
-        public class SoundFontEntry extends AlwaysSelectedEntryListWidget.Entry<SoundFontEntry>{
+        public class SoundFontEntry extends AlwaysSelectedEntryListWidget.Entry<SoundFontEntry> {
             private final SoundFontManager.SoundFont soundFont;
             private long clickTime;
 
@@ -180,7 +185,8 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
             }
 
             @Override
-            public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight,
+                    int mouseX, int mouseY, boolean hovered, float tickDelta) {
                 TextRenderer textRenderer = SoundFontManagerScreen.this.textRenderer;
                 Text soundFontName = Text.literal(this.soundFont.getName());
                 int width = SoundFontManagerScreen.SoundFontOptionListWidget.this.width / 2;

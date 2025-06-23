@@ -30,7 +30,7 @@ import java.util.concurrent.ThreadFactory;
 @Environment(EnvType.CLIENT)
 public class MidiChooseScreen extends GameOptionsScreen implements IScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MidiChooseScreen.class);
-    private static final String MIDI_DIRECTORY = "midi/mcmidi/midi";
+    private static final String MIDI_DIRECTORY = "midi/musics";
     private static final String[] MIDI_EXTENTIONS = { ".midi", ".mid" };
 
     private MidiListWidget midiFileListWidget;
