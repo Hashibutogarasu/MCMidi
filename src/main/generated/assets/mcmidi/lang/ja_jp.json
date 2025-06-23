@@ -1,6 +1,7 @@
 {
     "category.mcmidi.keybinds": "MCMidi",
     "key.midi.open": "MIDIコントロールセンターを開く",
+    "mcmidi.options.default_soundfont": "デフォルト",
     "mcmidi.midi.channel": "チャンネル",
     "mcmidi.midi.data1": "オクターブ",
     "mcmidi.midi.data2": "ベロシティ",

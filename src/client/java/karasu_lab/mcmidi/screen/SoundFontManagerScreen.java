@@ -85,14 +85,19 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
         SoundFontOptionListWidget.SoundFontEntry selected = this.soundFontOptionListWidget.getSelectedOrNull();
 
         if (selected != null) {
-            File file = new File(SOUNDFONT_DIRECTORY + "/" + selected.soundFont.path());
-            if (!file.exists()) {
-                LOGGER.error("Soundfont file does not exist use default");
-                config.soundFontPath = "";
-                return;
-            }
 
-            config.soundFontPath = file.getAbsolutePath();
+            if (selected.isDefault) {
+                LOGGER.info("Default soundfont selected");
+                config.soundFontPath = "";
+            } else {
+                File file = new File(SOUNDFONT_DIRECTORY + "/" + selected.soundFont.path());
+                if (!file.exists() || selected.soundFont.path() == null) {
+                    LOGGER.error("Soundfont file does not exist use default");
+                    config.soundFontPath = "";
+                } else {
+                    config.soundFontPath = file.getAbsolutePath();
+                }
+            }
         }
 
         AutoConfig.getConfigHolder(ModConfig.class).save();
@@ -143,6 +148,14 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
             super(minecraftClient, SoundFontManagerScreen.this.width, SoundFontManagerScreen.this.height - 33 - 53, 33,
                     18);
 
+            SoundFontEntry defaultEntry = new SoundFontEntry(new SoundFontManager.SoundFont(""), true);
+            addEntry(defaultEntry);
+
+            if (SoundFontManagerScreen.this.config.soundFontPath == null
+                    || SoundFontManagerScreen.this.config.soundFontPath.isEmpty()) {
+                this.setSelected(defaultEntry);
+            }
+
             List<String> soundfonts = SoundFontManagerScreen.this.getLocalSoundFonts();
 
             for (String soundfont : soundfonts) {
@@ -173,22 +186,30 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
 
         public class SoundFontEntry extends AlwaysSelectedEntryListWidget.Entry<SoundFontEntry> {
             private final SoundFontManager.SoundFont soundFont;
+            private final boolean isDefault;
             private long clickTime;
 
             public SoundFontEntry(SoundFontManager.SoundFont soundFont) {
+                this(soundFont, false);
+            }
+
+            public SoundFontEntry(SoundFontManager.SoundFont soundFont, boolean isDefault) {
                 this.soundFont = soundFont;
+                this.isDefault = isDefault;
             }
 
             @Override
             public Text getNarration() {
-                return Text.translatable("narrator.select", this.soundFont.getName());
+                return Text.translatable("narrator.select",
+                        isDefault ? Text.translatable("mcmidi.options.default_soundfont") : this.soundFont.getName());
             }
 
             @Override
             public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight,
                     int mouseX, int mouseY, boolean hovered, float tickDelta) {
                 TextRenderer textRenderer = SoundFontManagerScreen.this.textRenderer;
-                Text soundFontName = Text.literal(this.soundFont.getName());
+                Text soundFontName = isDefault ? Text.translatable("mcmidi.options.default_soundfont")
+                        : Text.literal(this.soundFont.getName());
                 int width = SoundFontManagerScreen.SoundFontOptionListWidget.this.width / 2;
                 int height = y + entryHeight / 2;
 

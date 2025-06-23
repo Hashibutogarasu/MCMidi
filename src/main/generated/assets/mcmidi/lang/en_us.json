@@ -1,6 +1,7 @@
 {
   "category.mcmidi.keybinds": "MCMidi",
   "key.midi.open": "Open Midi Controll Center",
+  "mcmidi.options.default_soundfont": "Default SoundFont",
   "mcmidi.midi.channel": "Channel",
   "mcmidi.midi.data1": "Octave",
   "mcmidi.midi.data2": "Velocity",

@@ -185,10 +185,17 @@ public class ExtendedMidi {
     }
 
     public void setSoundFont(String path) {
+        if (path == null || path.isEmpty()) {
+            LOGGER.info("Using default soundfont");
+            useDefaultSoundFont();
+            return;
+        }
+
         File file = new File(path);
 
         if (!file.exists() || file.isDirectory()) {
             LOGGER.error("Soundfont file does not exist use default");
+            useDefaultSoundFont();
             return;
         }
 
@@ -205,6 +212,23 @@ public class ExtendedMidi {
             sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
         } catch (InvalidMidiDataException | IOException | MidiUnavailableException e) {
             LOGGER.error("Failed to load soundfont: {}", path);
+            useDefaultSoundFont();
+        }
+    }
+
+    private void useDefaultSoundFont() {
+        try {
+            Sequencer sequencer = this.sequencer;
+            Synthesizer synthesizer = this.synthesizer;
+
+            for (Transmitter tm : sequencer.getTransmitters()) {
+                tm.close();
+            }
+
+            sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
+            LOGGER.info("Default soundfont loaded");
+        } catch (MidiUnavailableException e) {
+            LOGGER.error("Failed to load default soundfont", e);
         }
     }
 
