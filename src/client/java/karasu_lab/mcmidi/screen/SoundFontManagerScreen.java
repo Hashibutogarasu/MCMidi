@@ -85,7 +85,7 @@ public class SoundFontManagerScreen extends GameOptionsScreen implements IScreen
         SoundFontOptionListWidget.SoundFontEntry selected = this.soundFontOptionListWidget.getSelectedOrNull();
 
         if (selected != null) {
-            File file = new File("soundfont/" + selected.soundFont.path());
+            File file = new File(SOUNDFONT_DIRECTORY + selected.soundFont.path());
             if (!file.exists()) {
                 LOGGER.error("Soundfont file does not exist use default");
                 config.soundFontPath = "";
